@@ -1,0 +1,22 @@
+HISTFILE=~/.zsh_history
+HISTSIZE=5000
+SAVEHIST=5000
+setopt SHARE_HISTORY HIST_IGNORE_DUPS AUTO_CD
+
+autoload -Uz compinit && compinit
+zstyle ':completion:*' menu select
+
+bindkey -e
+bindkey '^[[H' beginning-of-line
+bindkey '^[[F' end-of-line
+bindkey '^[[3~' delete-char
+
+source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
+source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+eval "$(starship init zsh)"
+
+alias ls='eza --icons --group-directories-first'
+alias ll='eza -la --icons --group-directories-first'
+alias cat='bat --paging=never'
+alias vim='nvim'
+alias update='sudo pacman -Syu'

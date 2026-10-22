@@ -1,0 +1,43 @@
+{
+    "layer": "top",
+    "height": 26,
+    "spacing": 0,
+    "modules-left": ["sway/workspaces", "sway/mode"],
+    "modules-center": ["clock"],
+    "modules-right": ["sway/language", "pulseaudio", "network", "cpu", "memory", "battery", "tray"],
+
+    "clock": {
+        "format": "{:%H:%M  %d.%m}",
+        "tooltip-format": "{:%A, %d %B %Y}"
+    },
+    "sway/language": {
+        "format": "{short}"
+    },
+    "pulseaudio": {
+        "format": "VOL {volume}%",
+        "format-muted": "VOL off",
+        "on-click": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
+    },
+    "network": {
+        "format-wifi": "WIFI {essid}",
+        "format-ethernet": "ETH",
+        "format-disconnected": "NET off",
+        "tooltip-format": "{ipaddr} {signalStrength}%"
+    },
+    "cpu": {
+        "format": "CPU {usage}%",
+        "interval": 3
+    },
+    "memory": {
+        "format": "RAM {percentage}%",
+        "interval": 5
+    },
+    "battery": {
+        "states": { "warning": 30, "critical": 15 },
+        "format": "BAT {capacity}%",
+        "format-charging": "CHR {capacity}%"
+    },
+    "tray": {
+        "spacing": 8
+    }
+}

@@ -26,6 +26,7 @@ sudo pacman -Syu --needed --noconfirm \
   pipewire pipewire-pulse wireplumber \
   sway swaybg swaylock swayidle waybar foot fuzzel mako \
   grim slurp wl-clipboard brightnessctl polkit xdg-desktop-portal-wlr \
+  xorg-xwayland xcb-util-cursor qt6-wayland \
   ttf-jetbrains-mono-nerd noto-fonts noto-fonts-emoji \
   firefox zsh zsh-autosuggestions zsh-syntax-highlighting starship \
   btop fastfetch ripgrep fd bat eza pacman-contrib reflector

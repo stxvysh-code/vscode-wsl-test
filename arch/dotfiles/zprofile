@@ -1,4 +1,9 @@
 # Автозапуск sway после входа на первой консоли (tty1)
 if [ -z "$WAYLAND_DISPLAY" ] && [ "$XDG_VTNR" = 1 ]; then
+  # Подсказываем программам, что сессия Wayland (иначе Qt-приложения ищут X11)
+  export XDG_SESSION_TYPE=wayland
+  export XDG_CURRENT_DESKTOP=sway
+  export QT_QPA_PLATFORM="wayland;xcb"
+  export MOZ_ENABLE_WAYLAND=1
   exec sway
 fi

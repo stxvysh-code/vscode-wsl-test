@@ -1,0 +1,35 @@
+# Секреты и авторизация
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
+.netrc
+.git-credentials
+
+# Локальные настройки Claude Code (могут содержать разрешения/пути)
+.claude/settings.local.json
+.claude/*.local.*
+
+# Чувствительные материалы, которые НЕ уходят в GitHub (медицинские документы, выписки и т.п.)
+private/
+
+# Служебное
+.memory-sync.log
+*.log
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.cache/
+node_modules/
+__pycache__/
+
+# Исходные видео и тяжёлые медиа не храним в git
+*.mp4
+*.mov
+*.mkv
+*.webm

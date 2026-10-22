@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Блокирует коммит с секретами или запрещёнными файлами (в т.ч. ручные коммиты).
+exec "$(git rev-parse --show-toplevel)/scripts/secret-scan.sh"

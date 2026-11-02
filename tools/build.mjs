@@ -10,11 +10,11 @@ const D = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/site.json'), 'utf8'))
 const MANIFEST = JSON.parse(fs.readFileSync(path.join(ROOT, 'assets/img/manifest.json'), 'utf8'));
 // Адрес сайта — подставляется в canonical, og:url, превью для мессенджеров (og:image) и sitemap.
 // При переезде на свой домен (например 'https://arttonir.ru') поменяйте здесь и пересоберите.
-const SITE_URL = 'https://cheerful-monstera-5c02d4.netlify.app';
+const SITE_URL = 'https://demositestxv1.netlify.app';
 // DEMO = true — демо для показа владельцу: сайт закрыт от поисковиков (meta robots, заголовок X-Robots-Tag
 // в файле _headers для Netlify), sitemap не публикуется. Перед официальным запуском поставьте false.
 const DEMO = true;
-const VERSION = '5';
+const VERSION = '6';
 
 /* ───────────────────────── helpers ───────────────────────── */
 const esc = (s = '') => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');

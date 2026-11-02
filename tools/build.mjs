@@ -8,9 +8,13 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const D = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/site.json'), 'utf8'));
 const MANIFEST = JSON.parse(fs.readFileSync(path.join(ROOT, 'assets/img/manifest.json'), 'utf8'));
-// Укажите домен, когда он появится (например 'https://arttonir.ru') — подставится в canonical, og:url и sitemap.
-const SITE_URL = '';
-const VERSION = '4';
+// Адрес сайта — подставляется в canonical, og:url, превью для мессенджеров (og:image) и sitemap.
+// При переезде на свой домен (например 'https://arttonir.ru') поменяйте здесь и пересоберите.
+const SITE_URL = 'https://cheerful-monstera-5c02d4.netlify.app';
+// DEMO = true — демо для показа владельцу: сайт закрыт от поисковиков (meta robots, заголовок X-Robots-Tag
+// в файле _headers для Netlify), sitemap не публикуется. Перед официальным запуском поставьте false.
+const DEMO = true;
+const VERSION = '5';
 
 /* ───────────────────────── helpers ───────────────────────── */
 const esc = (s = '') => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -344,6 +348,7 @@ function page({ file, title, desc, active, body, bodyClass = '', scripts = [], i
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(desc)}">
 <meta name="theme-color" content="#0B0B0B">
+${DEMO ? '<meta name="robots" content="noindex, nofollow">' : ''}
 ${canonical}
 <meta property="og:type" content="website">
 <meta property="og:locale" content="ru_RU">
@@ -353,6 +358,7 @@ ${canonical}
 <meta property="og:image" content="${SITE_URL}/assets/img/og.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="ART TONIR — тонировка, антигравийная плёнка и шумоизоляция в Бийске">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/img/logo/logo-32.png">
 <link rel="apple-touch-icon" href="assets/img/logo/logo-180.png">
@@ -1236,10 +1242,18 @@ function buildData() {
 }
 
 function buildSitemap() {
-  const base = SITE_URL || 'https://example.com';
-  const urls = PAGES.filter((p) => p !== '404.html').map((p) => `  <url><loc>${base}/${p === 'index.html' ? '' : p}</loc></url>`).join('\n');
-  fs.writeFileSync(path.join(ROOT, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<!-- Замените ${base} на реальный домен (SITE_URL в tools/build.mjs) -->\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`);
-  fs.writeFileSync(path.join(ROOT, 'robots.txt'), `User-agent: *\nAllow: /\nSitemap: ${base}/sitemap.xml\n`);
+  const sm = path.join(ROOT, 'sitemap.xml'), hd = path.join(ROOT, '_headers');
+  if (DEMO) {
+    // демо: поисковики видят страницы, но не индексируют их (noindex); карты сайта нет
+    fs.writeFileSync(path.join(ROOT, 'robots.txt'), `# Демо-версия сайта: страницы закрыты от индексации (noindex)\nUser-agent: *\nAllow: /\n`);
+    fs.writeFileSync(hd, `/*\n  X-Robots-Tag: noindex, nofollow\n`);
+    if (fs.existsSync(sm)) fs.unlinkSync(sm);
+    return;
+  }
+  const urls = PAGES.filter((p) => p !== '404.html').map((p) => `  <url><loc>${SITE_URL}/${p === 'index.html' ? '' : p}</loc></url>`).join('\n');
+  fs.writeFileSync(sm, `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`);
+  fs.writeFileSync(path.join(ROOT, 'robots.txt'), `User-agent: *\nAllow: /\nSitemap: ${SITE_URL}/sitemap.xml\n`);
+  if (fs.existsSync(hd)) fs.unlinkSync(hd);
 }
 
 buildData();

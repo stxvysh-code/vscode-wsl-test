@@ -21,7 +21,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,500;1,600;1,700&family=JetBrains+Mono:wght@400;500&family=Rye&display=swap">
-<link rel="stylesheet" href="assets/css/main.css?v=1">
+<link rel="stylesheet" href="assets/css/main.css?v=2">
 <link rel="preload" as="image" href="assets/img/hero/poster-1920.webp" imagesrcset="assets/img/hero/poster-1280.webp 1280w, assets/img/hero/poster-1920.webp 1920w" imagesizes="100vw" media="(min-aspect-ratio: 4/5)">
 <link rel="preload" as="image" href="assets/img/hero/poster-portrait-900.webp" media="(max-aspect-ratio: 4/5)">
 <link rel="modulepreload" href="assets/vendor/three/three.module.min.js">
@@ -135,7 +135,7 @@
 
 <section class="hero" data-hero>
   <canvas class="hero__gl" aria-hidden="true"></canvas>
-  <div class="hero__fallback" aria-hidden="true"><picture><source media="(max-aspect-ratio: 4/5)" srcset="assets/img/hero/poster-portrait-900.webp"><img src="assets/img/hero/poster-1920.webp" srcset="assets/img/hero/poster-1280.webp 1280w, assets/img/hero/poster-1920.webp 1920w" sizes="100vw" width="1920" height="1080" alt="" fetchpriority="high"></picture></div>
+  <div class="hero__fallback" aria-hidden="true"><picture><source media="(max-height: 520px) and (orientation: landscape)" srcset="assets/img/hero/stage-1600.webp"><source media="(max-aspect-ratio: 4/5)" srcset="assets/img/hero/poster-portrait-900.webp"><img src="assets/img/hero/poster-1920.webp" srcset="assets/img/hero/poster-1280.webp 1280w, assets/img/hero/poster-1920.webp 1920w" sizes="100vw" width="1920" height="1080" alt="" fetchpriority="high"></picture></div>
   <div class="hero__vignette" aria-hidden="true"></div>
   <div class="hero__word" aria-hidden="true"><span>ART</span><span>TONIR</span></div>
   <div class="container hero__in">
@@ -642,9 +642,9 @@
 <script src="assets/vendor/gsap.min.js" defer></script>
 <script src="assets/vendor/ScrollTrigger.min.js" defer></script>
 <script src="assets/vendor/lenis.min.js" defer></script>
-<script src="assets/js/data.js?v=1" defer></script>
-<script src="assets/js/app.js?v=1" defer></script>
-<script src="assets/js/tools.js?v=1" defer></script>
-<script type="module" src="assets/js/hero3d.mjs?v=1"></script>
+<script src="assets/js/data.js?v=2" defer></script>
+<script src="assets/js/app.js?v=2" defer></script>
+<script src="assets/js/tools.js?v=2" defer></script>
+<script type="module" src="assets/js/hero3d.js?v=2"></script>
 </body>
 </html>

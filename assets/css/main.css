@@ -404,7 +404,7 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; border-radius
 .tool__meter { display: flex; justify-content: space-between; align-items: baseline; }
 .tool__meter span { color: var(--muted); font-size: 14px; }
 .tool__meter b { font: 600 28px var(--f-display); }
-.tool__stage { position: relative; border-radius: var(--r-lg); overflow: hidden; border: 1px solid var(--line-2); background: radial-gradient(90% 80% at 50% 0%, #1d1e21 0%, #0c0c0d 70%); min-height: 360px; }
+.tool__stage { position: relative; border-radius: var(--r-lg); overflow: hidden; border: 1px solid var(--line-2); background: radial-gradient(90% 80% at 50% 0%, #1d1e21 0%, #0c0c0d 70%); width: 100%; }
 .tool__stage--car { display: grid; place-items: center; padding: 0 clamp(6px, 1.5vw, 20px); aspect-ratio: 4 / 3; background: #070708 url(../img/hero/stage-1600.webp) 50% 40% / cover; }
 .tool__stage--car::before { content: ""; position: absolute; inset: 0; background: radial-gradient(90% 70% at 50% 75%, transparent 30%, rgba(7,7,8,.7) 100%), linear-gradient(to bottom, rgba(7,7,8,.25), transparent 40%); pointer-events: none; }
 @media (max-width: 900px) { .tool__stage--car { background-image: url(../img/hero/stage-900.webp); } }
@@ -793,11 +793,11 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; border-radius
 .plateframe { position: absolute; right: 0; bottom: 10%; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 18px 30px; background: #050505; border: 2px solid #1d1d1f; border-radius: 10px; box-shadow: 0 30px 60px rgba(0,0,0,.8), inset 0 1px 0 rgba(255,255,255,.08); transform: rotate(4deg); }
 .plateframe b { font: 700 clamp(1.6rem, 3vw, 2.4rem)/1 var(--f-serif); letter-spacing: .03em; }
 .plateframe i { font: 400 clamp(.9rem, 1.6vw, 1.2rem)/1 var(--f-west); color: var(--gold); letter-spacing: .18em; font-style: normal; }
-.dirs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; }
+.dirs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }
 .dir { position: relative; display: flex; flex-direction: column; gap: 8px; padding: 24px; min-height: 200px; border-radius: var(--r); border: 1px solid var(--line-2); transition: border-color .4s, transform .5s var(--ease); }
 .dir:hover { border-color: var(--gold); transform: translateY(-6px); }
 .dir__n { font: 500 12px var(--f-mono); color: var(--gold); }
-.dir b { font: 700 18px/1.15 var(--f-display); text-transform: uppercase; margin-top: auto; }
+.dir b { font: 700 clamp(14px, 1.3vw, 18px)/1.15 var(--f-display); text-transform: uppercase; margin-top: auto; overflow-wrap: anywhere; }
 .dir i { font-style: normal; font-size: 14px; color: var(--muted); }
 .dir .ic { position: absolute; top: 22px; right: 22px; color: var(--gold); transition: transform .5s var(--ease); }
 .dir:hover .ic { transform: rotate(45deg); }
@@ -897,7 +897,7 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; border-radius
   .hdr__phone span { display: none; }
   .hdr__phone { width: 48px; height: 48px; border-radius: 50%; border: 1px solid var(--line-2); justify-content: center; }
   .bento { grid-template-columns: repeat(2, 1fr); }
-  .dirs { grid-template-columns: repeat(3, 1fr); }
+  .dirs { grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); }
   .mega { display: none; }
 }
 @media (max-width: 960px) {
@@ -953,7 +953,9 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; border-radius
 }
 @media (max-width: 640px) {
   .hdr__act .btn--gold { display: none; }
-  .hero__vignette { background: linear-gradient(to top, #0b0b0b 0%, rgba(9,9,10,.86) 52%, rgba(9,9,10,.35) 78%, rgba(9,9,10,.1) 100%); }
+  .hero__vignette { background: linear-gradient(to top, #0b0b0b 0%, rgba(9,9,10,.9) 55%, rgba(9,9,10,.62) 80%, rgba(9,9,10,.3) 100%); }
+  .hero__eyebrow, .hero__title { text-shadow: 0 2px 18px rgba(0,0,0,.85); }
+  .hero__title em { filter: drop-shadow(0 2px 10px rgba(0,0,0,.9)); }
   .car { width: 104%; margin-inline: -2%; }
   .tool__stage--car { aspect-ratio: 4 / 3; }
   .brand__txt b { font-size: 17px; }
@@ -967,7 +969,8 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; border-radius
   .bento__c--rating, .bento__c--photo, .bento__c--quote, .bento__c--acid { grid-column: auto; grid-row: auto; }
   .bento__c--photo { min-height: 300px; }
   .steps__list { grid-template-columns: 1fr; }
-  .dirs { grid-template-columns: 1fr 1fr; }
+  .dirs { grid-template-columns: 1fr; }
+  .dir { min-height: 150px; }
   .facts__list { grid-template-columns: 1fr; }
   .catnav__grid { grid-template-columns: 1fr; }
   .catnav__c--next { text-align: left; align-items: flex-start; }
@@ -992,8 +995,73 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; border-radius
 }
 
 @media (prefers-reduced-motion: reduce) {
+  html:not(.lenis) { scroll-behavior: auto; }
   *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
   body::after { animation: none; }
 }
 
 @media (max-width: 1180px) { .bento__c--quote, .bento__c--acid { grid-column: auto; } }
+
+/* ==========================================================================
+   Телефоны: длинные слова широким шрифтом, кнопки, сетки
+   ========================================================================== */
+.tool__grid > *, .contacts__grid > *, .booking__grid > *, .faq-sec__grid > *, .studio-hero > *, .plate__grid > *, .rhero > *, .hero__in > * { min-width: 0; }
+@media (max-width: 640px) {
+  /* размер шрифта считается от ширины экрана так, чтобы самое длинное слово
+     (АНТИГРАВИЙНАЯ, ШУМОИЗОЛЯЦИЯ — 12–13 букв) помещалось в строку */
+  .hero__title { font-size: min(2.6rem, calc((100vw - 32px) / 12.6)); }
+  .h1 { font-size: min(2.6rem, calc((100vw - 32px) / 13.4)); }
+  .h2 { font-size: min(2.2rem, calc((100vw - 32px) / 13.4)); }
+  .stack__title { font-size: min(2.2rem, calc((100vw - 84px) / 13.4)); }
+  .svc__name { font-size: min(1.6rem, calc((100vw - 32px) / 15)); }
+  .catnav__c b { font-size: min(1.8rem, calc((100vw - 84px) / 13.4)); }
+  .cblock__big { font-size: min(1.8rem, calc((100vw - 84px) / 11)); }
+  .bento__over b, .bento__mid { font-size: min(22px, calc((100vw - 90px) / 12)); }
+  .wiz__pane legend { font-size: min(1.8rem, calc((100vw - 76px) / 12)); }
+  .stack__body { padding: 22px; }
+  .stack__from { font-size: 12px; }
+  .stack__list li { font-size: 14px; }
+  .pricecat__head { grid-template-columns: 1fr; gap: 8px; margin-bottom: 30px; }
+  .pricecat__num { font-size: 3rem; }
+  .sec-head { margin-bottom: 34px; }
+  .section { padding-block: 72px; }
+  /* кнопки могут переноситься, а не вылезать за экран */
+  .btn { white-space: normal; text-align: center; height: auto; min-height: var(--h); padding-block: 10px; line-height: 1.2; }
+  .btn--icon { padding: 0; height: var(--h); }
+  .tool__ctrl { padding: 18px; }
+  .tool__sum { flex-wrap: wrap; gap: 6px 16px; }
+  .seg button { padding: 9px 13px; font-size: 13.5px; }
+  .tool__badge { left: 10px; top: 10px; font-size: 11px; padding: 6px 10px; }
+  .tool__badge--r { left: auto; right: 10px; }
+  .cblock { padding: 20px; }
+  .messengers a { padding: 9px 12px; font-size: 13.5px; }
+  .map { min-height: 340px; }
+  .wiz { padding: 18px; }
+  .wiz__opts { grid-template-columns: 1fr; }
+  .phero__price { flex-wrap: wrap; gap: 6px 14px; }
+  .marquee { padding: 18px 0; }
+  .score__ring { width: 160px; height: 160px; }
+  .score__ring b { font-size: 50px; }
+  .emblem__face { inset: 21%; }
+  .hero__stats .stat b { font-size: 1.5rem; }
+  .ftr__cols { grid-template-columns: 1fr 1fr; gap: 26px 20px; }
+  .ftr__cols > div:last-child { grid-column: 1 / -1; }
+  .cta__title { max-width: none; }
+  .extra__list li { flex-direction: column; align-items: flex-start; gap: 8px; font-size: min(1.05rem, calc((100vw - 32px) / 14)); }
+}
+@media (max-width: 360px) {
+  .brand__txt i { display: none; }
+  .hero__meta .chip { font-size: 12px; }
+  .stats .stat { flex-direction: column; gap: 4px; align-items: flex-start; }
+}
+/* телефон горизонтально: невысокий экран */
+@media (max-height: 500px) and (orientation: landscape) {
+  .hero__in { padding-top: calc(var(--hdr) + 20px); }
+  .hero__title { font-size: clamp(1.5rem, 4.4vw, 2.4rem); }
+  .hero__hud, .hero__scroll { display: none; }
+  .stack__card { position: relative; top: auto; }
+  .mbar, .mbar[class] { display: none; }
+  body { padding-bottom: 0; }
+  .smeta-fab { bottom: 14px; }
+  .phero:not(.phero--text):not(.phero--studio) { min-height: 0; }
+}

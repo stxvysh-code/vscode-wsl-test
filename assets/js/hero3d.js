@@ -317,7 +317,7 @@ function init() {
     camera.fov = w / h < 0.8 ? 58 : 42;
     camera.updateProjectionMatrix();
     reflector.getRenderTarget().setSize(Math.round(w * DPR * 0.5), Math.round(h * DPR * 0.5));
-    glassGroup.visible = w / h >= 0.8 && SHOT !== 'empty' && SHOT !== 'stage';
+    glassGroup.visible = w / h >= 0.8 && h >= 520 && SHOT !== 'empty' && SHOT !== 'stage';
     if (w / h < 0.8) { // портрет / телефон: только световой потолок
       glassGroup.position.set(0.55, 2.95, -1.4);
       glassGroup.scale.setScalar(0.56);

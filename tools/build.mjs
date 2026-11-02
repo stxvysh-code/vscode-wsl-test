@@ -10,7 +10,7 @@ const D = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/site.json'), 'utf8'))
 const MANIFEST = JSON.parse(fs.readFileSync(path.join(ROOT, 'assets/img/manifest.json'), 'utf8'));
 // Укажите домен, когда он появится (например 'https://arttonir.ru') — подставится в canonical, og:url и sitemap.
 const SITE_URL = '';
-const VERSION = '1';
+const VERSION = '2';
 
 /* ───────────────────────── helpers ───────────────────────── */
 const esc = (s = '') => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -380,7 +380,7 @@ ${smeta()}
 <script src="assets/vendor/lenis.min.js" defer></script>
 <script src="assets/js/data.js?v=${VERSION}" defer></script>
 <script src="assets/js/app.js?v=${VERSION}" defer></script>
-${scripts.map((s) => (s.endsWith('.mjs') ? `<script type="module" src="${s}?v=${VERSION}"></script>` : `<script src="${s}?v=${VERSION}" defer></script>`)).join('\n')}
+${scripts.map((s) => (s.module ? `<script type="module" src="${s.module}?v=${VERSION}"></script>` : `<script src="${s}?v=${VERSION}" defer></script>`)).join('\n')}
 </body>
 </html>
 `;
@@ -655,7 +655,7 @@ function buildIndex() {
   const body = `
 <section class="hero" data-hero>
   <canvas class="hero__gl" aria-hidden="true"></canvas>
-  <div class="hero__fallback" aria-hidden="true"><picture><source media="(max-aspect-ratio: 4/5)" srcset="assets/img/hero/poster-portrait-900.webp"><img src="assets/img/hero/poster-1920.webp" srcset="assets/img/hero/poster-1280.webp 1280w, assets/img/hero/poster-1920.webp 1920w" sizes="100vw" width="1920" height="1080" alt="" fetchpriority="high"></picture></div>
+  <div class="hero__fallback" aria-hidden="true"><picture><source media="(max-height: 520px) and (orientation: landscape)" srcset="assets/img/hero/stage-1600.webp"><source media="(max-aspect-ratio: 4/5)" srcset="assets/img/hero/poster-portrait-900.webp"><img src="assets/img/hero/poster-1920.webp" srcset="assets/img/hero/poster-1280.webp 1280w, assets/img/hero/poster-1920.webp 1920w" sizes="100vw" width="1920" height="1080" alt="" fetchpriority="high"></picture></div>
   <div class="hero__vignette" aria-hidden="true"></div>
   <div class="hero__word" aria-hidden="true"><span>ART</span><span>TONIR</span></div>
   <div class="container hero__in">
@@ -849,7 +849,7 @@ ${ctaBlock()}
     active: 'index',
     body,
     bodyClass: 'is-home',
-    scripts: ['assets/js/tools.js', 'assets/js/hero3d.mjs'],
+    scripts: ['assets/js/tools.js', { module: 'assets/js/hero3d.js' }],
     importmap: true,
     preload: `<link rel="preload" as="image" href="assets/img/hero/poster-1920.webp" imagesrcset="assets/img/hero/poster-1280.webp 1280w, assets/img/hero/poster-1920.webp 1920w" imagesizes="100vw" media="(min-aspect-ratio: 4/5)">
 <link rel="preload" as="image" href="assets/img/hero/poster-portrait-900.webp" media="(max-aspect-ratio: 4/5)">

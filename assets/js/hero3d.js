@@ -1,11 +1,10 @@
 // ART TONIR — 3D-сцена главного экрана.
 // Бокс студии: световой потолок из LED-ламп с Y-коннекторами (как в реальном боксе),
 // мокрый бетонный пол с отражениями, графитовые стены, кислотно-жёлтая колонна.
-// В центре — дверь со стеклом, на которое «накатывается» тонировочная плёнка.
+// Интерактив: соты под курсором загораются золотом, по клику/тапу по потолку расходится волна света.
 //
-// Производительность: без transmission-стекла, 2 точечных источника вместо 6, сниженная плотность
-// пикселей, 30 кадров/с в простое, автоматическое снижение качества на слабых устройствах,
-// полная пауза, когда главный экран не виден.
+// Производительность: 2 точечных источника, сниженная плотность пикселей, 30 кадров/с в простое,
+// автоматическое снижение качества на слабых устройствах, полная пауза, когда главный экран не виден.
 import * as THREE from 'three';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
@@ -39,7 +38,7 @@ function canvasTex(w, h, draw, repeat) {
 }
 
 function init() {
-  // ?shot=poster|empty|stage — служебный режим для рендера статичных картинок (tools/render-assets.mjs)
+  // ?shot=poster|stage — служебный режим для рендера статичных картинок (tools/render-assets.mjs)
   const SHOT = new URLSearchParams(location.search).get('shot');
   const reduce = !!SHOT || matchMedia('(prefers-reduced-motion: reduce)').matches;
   const coarse = matchMedia('(pointer: coarse)').matches;
@@ -148,24 +147,36 @@ function init() {
     }
   }
   const E = Array.from(edges.values());
-  const tubes = new THREE.InstancedMesh(new THREE.BoxGeometry(R * 0.8, 0.05, 0.085), new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false }), E.length);
+  const N = E.length;
+  const tubes = new THREE.InstancedMesh(new THREE.BoxGeometry(R * 0.8, 0.05, 0.085), new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false }), N);
   const m4 = new THREE.Matrix4(), q4 = new THREE.Quaternion(), s1 = new THREE.Vector3(1, 1, 1), up = new THREE.Vector3(0, 1, 0);
   const tubeCol = new THREE.Color();
   const LED = 2.1; // HDR-яркость для свечения
-  const delays = [];
+  const GOLD = new THREE.Color(1.0, 0.55, 0.16);
+  const delays = new Float32Array(N), base = new Float32Array(N), glow = new Float32Array(N);
   E.forEach((e, i) => {
     q4.setFromAxisAngle(up, -e.ang);
     m4.compose(new THREE.Vector3(e.mx, H - 0.03, e.mz), q4, s1);
     tubes.setMatrixAt(i, m4);
-    delays.push(0.15 + ((Z0 - e.mz) / roomLen) * 1.15 + Math.random() * 0.35);
-    tubes.setColorAt(i, tubeCol.setScalar(reduce ? LED : 0));
+    delays[i] = 0.15 + ((Z0 - e.mz) / roomLen) * 1.15 + Math.random() * 0.35;
+    base[i] = reduce ? 1 : 0;
   });
+  tubes.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(N * 3), 3);
   tubes.instanceColor.setUsage(THREE.DynamicDrawUsage);
   scene.add(tubes);
   const V = Array.from(verts.values()).filter(([x, z]) => Math.abs(x) < W / 2 - 0.2 && z > Z1 && z < Z0);
   const conn = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.07, 0.07, 0.05, 10), new THREE.MeshLambertMaterial({ color: 0x9aa0a8, emissive: 0x2a2a2a }), V.length);
   V.forEach(([x, z], i) => { m4.makeTranslation(x, H - 0.03, z); conn.setMatrixAt(i, m4); });
   scene.add(conn);
+
+  function paintLamps() {
+    for (let i = 0; i < N; i++) {
+      const g = glow[i], b = base[i] * LED * (1 - 0.2 * g);   // чуть ниже яркость — золото не выгорает в белый
+      tubeCol.setRGB(1 + (GOLD.r - 1) * g, 1 + (GOLD.g - 1) * g, 1 + (GOLD.b - 1) * g).multiplyScalar(b);
+      tubes.setColorAt(i, tubeCol);
+    }
+    tubes.instanceColor.needsUpdate = true;
+  }
 
   // освещение: мягкий общий свет + 2 точечных + направленный ключевой и золотой контровой
   scene.add(new THREE.HemisphereLight(0xdfe6ff, 0x0a0a0a, 0.45));
@@ -179,102 +190,6 @@ function init() {
   keyL.position.set(-4, 5, 7); scene.add(keyL);
   const keyRim = new THREE.DirectionalLight(0xc5a465, 0.8);
   keyRim.position.set(6, 1, -2); scene.add(keyRim);
-
-  /* ---------- дверь со стеклом ---------- */
-  const env = (() => {
-    const es = new THREE.Scene();
-    es.background = new THREE.Color(0x030303);
-    const sm = new THREE.MeshBasicMaterial({ color: new THREE.Color(4, 4, 4.3) });
-    for (let i = 0; i < 26; i++) {
-      const b = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.06, 0.12), sm);
-      b.position.set((Math.random() - 0.5) * 10, 3.6, (Math.random() - 0.5) * 10);
-      b.rotation.y = Math.floor(Math.random() * 3) * (Math.PI / 3);
-      es.add(b);
-    }
-    const y = new THREE.Mesh(new THREE.BoxGeometry(0.6, 4, 0.6), new THREE.MeshBasicMaterial({ color: new THREE.Color(0.9, 0.85, 0.05) }));
-    y.position.set(-4, 1.5, -2); es.add(y);
-    const pm = new THREE.PMREMGenerator(renderer);
-    const rt = pm.fromScene(es, 0.03);
-    pm.dispose();
-    return rt.texture;
-  })();
-
-  const shape = new THREE.Shape();
-  shape.moveTo(-1.62, -0.56);
-  shape.lineTo(1.42, -0.56);
-  shape.quadraticCurveTo(1.56, -0.56, 1.56, -0.42);
-  shape.lineTo(1.56, 0.44);
-  shape.quadraticCurveTo(1.56, 0.6, 1.38, 0.63);
-  shape.quadraticCurveTo(0.45, 0.76, -0.38, 0.6);
-  shape.quadraticCurveTo(-1.02, 0.44, -1.58, -0.36);
-  shape.quadraticCurveTo(-1.7, -0.56, -1.62, -0.56);
-
-  const glassGroup = new THREE.Group();
-  // стекло без transmission: тёмное полупрозрачное с отражениями ламп (в разы дешевле)
-  const glass = new THREE.Mesh(new THREE.ShapeGeometry(shape, 24), new THREE.MeshPhysicalMaterial({
-    color: 0x0c1013, metalness: 0.2, roughness: 0.05, envMap: env, envMapIntensity: 2.2,
-    clearcoat: 1, clearcoatRoughness: 0.03, transparent: true, opacity: 0.5, depthWrite: false,
-  }));
-  glassGroup.add(glass);
-
-  const filmGeo = new THREE.ShapeGeometry(shape, 32);
-  filmGeo.computeBoundingBox();
-  const bb = filmGeo.boundingBox;
-  const filmMat = new THREE.ShaderMaterial({
-    transparent: true, depthWrite: false, side: THREE.DoubleSide,
-    uniforms: {
-      uProg: { value: reduce ? 1 : 0 }, uTint: { value: 0.6 }, uTime: { value: 0 },
-      uMin: { value: new THREE.Vector2(bb.min.x, bb.min.y) }, uMax: { value: new THREE.Vector2(bb.max.x, bb.max.y) },
-    },
-    vertexShader: `varying vec2 vP; void main(){ vP = position.xy; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
-    fragmentShader: `
-      uniform float uProg, uTint, uTime; uniform vec2 uMin, uMax; varying vec2 vP;
-      void main(){
-        vec2 p = (vP - uMin) / (uMax - uMin);
-        float x = p.x + (p.y - 0.5) * 0.16;
-        float edge = uProg * 1.2 - 0.1;
-        float covered = smoothstep(edge + 0.006, edge - 0.006, x);
-        float alpha = covered * mix(0.06, 0.94, uTint);
-        vec3 col = vec3(0.010, 0.010, 0.014);
-        float live = step(0.001, uProg) * step(uProg, 0.999);
-        float glint = exp(-abs(x - edge) * 60.0) * live;
-        float ahead = smoothstep(edge + 0.3, edge, x) * (1.0 - covered) * live;
-        float s = fract(p.x * 0.7 - p.y * 0.5 - uTime * 0.045);
-        float stripe = smoothstep(0.05, 0.0, abs(s - 0.5)) * covered * 0.16;
-        col += vec3(1.0, 0.9, 0.7) * glint * 2.2 + vec3(0.85, 0.9, 1.0) * stripe * 2.0;
-        alpha = clamp(alpha + glint * 0.85 + ahead * 0.10 + stripe, 0.0, 1.0);
-        gl_FragColor = vec4(col + vec3(0.6, 0.75, 0.8) * ahead * 0.25, alpha);
-      }`,
-  });
-  const film = new THREE.Mesh(filmGeo, filmMat);
-  film.position.z = 0.01;
-  glassGroup.add(film);
-
-  // золотая окантовка
-  const pts = shape.getPoints(80).map((p) => new THREE.Vector3(p.x, p.y, 0));
-  const rim = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, true), 200, 0.016, 6, true), new THREE.MeshBasicMaterial({ color: new THREE.Color(0.77 * 1.6, 0.64 * 1.6, 0.4 * 1.6), toneMapped: false }));
-  glassGroup.add(rim);
-
-  // фрагмент двери: глянцевый белый лак, в котором отражаются лампы
-  const door = new THREE.Shape();
-  door.moveTo(-1.95, -0.66);
-  door.lineTo(1.78, -0.66);
-  door.quadraticCurveTo(1.86, -0.66, 1.86, -0.74);
-  door.lineTo(1.86, -1.62);
-  door.quadraticCurveTo(1.86, -1.86, 1.62, -1.88);
-  door.lineTo(-1.5, -1.88);
-  door.quadraticCurveTo(-1.86, -1.86, -1.92, -1.5);
-  door.quadraticCurveTo(-2.04, -1.0, -1.95, -0.66);
-  const doorGeo = new THREE.ExtrudeGeometry(door, { depth: 0.08, bevelEnabled: true, bevelThickness: 0.04, bevelSize: 0.04, bevelSegments: 4, curveSegments: 18 });
-  doorGeo.translate(0, 0, -0.1);
-  glassGroup.add(new THREE.Mesh(doorGeo, new THREE.MeshPhysicalMaterial({ color: 0xe9e9e6, metalness: 0.15, roughness: 0.28, clearcoat: 1, clearcoatRoughness: 0.03, envMap: env, envMapIntensity: 1.3 })));
-  const handle = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.06, 0.05), new THREE.MeshStandardMaterial({ color: 0x111113, metalness: 0.8, roughness: 0.15, envMap: env, envMapIntensity: 2 }));
-  handle.position.set(0.95, -0.98, 0.04);
-  glassGroup.add(handle);
-  const seal = new THREE.Mesh(new THREE.BoxGeometry(3.5, 0.05, 0.06), new THREE.MeshLambertMaterial({ color: 0x050505 }));
-  seal.position.set(-0.04, -0.6, 0.0);
-  glassGroup.add(seal);
-  scene.add(glassGroup);
 
   // пыль в свете ламп
   const dustN = coarse ? 140 : 320;
@@ -292,9 +207,7 @@ function init() {
   composer.addPass(new OutputPass());
   let useBloom = true;
 
-  /* ---------- раскладка: по размеру самого холста (на телефоне он занимает верх экрана) ---------- */
-  const glassBase = new THREE.Vector3();
-  let portrait = false;
+  /* ---------- раскладка по размеру холста ---------- */
   function layout() {
     const w = Math.max(1, canvas.clientWidth), h = Math.max(1, canvas.clientHeight);
     renderer.setPixelRatio(DPR);
@@ -303,78 +216,84 @@ function init() {
     composer.setSize(w, h);
     bloom.resolution.set(w / 2, h / 2);
     camera.aspect = w / h;
-    portrait = w / h < 1.25 || w < 640;
-    camera.fov = portrait ? 56 : 42;
+    camera.fov = w / h < 0.75 ? 60 : w / h < 1.25 ? 52 : 42;   // телефон — шире угол, чтобы потолок был виден целиком
     camera.updateProjectionMatrix();
     reflector.getRenderTarget().setSize(Math.round(w * DPR * REFL), Math.round(h * DPR * REFL));
-    glassGroup.visible = SHOT !== 'empty' && SHOT !== 'stage' && h >= 300;
-    if (portrait) {          // телефон: дверь по центру верхней части
-      glassGroup.position.set(0.3, 2.5, -1.3);
-      glassGroup.scale.setScalar(0.6);
-    } else if (w < 1180) {
-      glassGroup.position.set(2.3, 2.4, -1.0);
-      glassGroup.scale.setScalar(0.64);
-    } else {
-      glassGroup.position.set(3.15, 2.5, -0.8);
-      glassGroup.scale.setScalar(0.64);
-    }
-    glassBase.copy(glassGroup.position);
     poke();
   }
   let rzT;
   const onResize = () => { clearTimeout(rzT); rzT = setTimeout(() => { layout(); if (reduce) renderOnce(); }, 120); };
   if ('ResizeObserver' in window) new ResizeObserver(onResize).observe(canvas); else addEventListener('resize', onResize);
 
-  /* ---------- управление ---------- */
+  /* ---------- управление: камера за мышью, золотая подсветка сот, волна по клику ---------- */
   let lastPoke = performance.now();
   function poke() { lastPoke = performance.now(); }
-  const ptr = { x: 0, y: 0, tx: 0, ty: 0 };
-  if (!coarse) addEventListener('pointermove', (e) => { ptr.tx = (e.clientX / innerWidth) * 2 - 1; ptr.ty = (e.clientY / innerHeight) * 2 - 1; poke(); }, { passive: true });
-  addEventListener('scroll', poke, { passive: true });
-  let tintTarget = 0.6;
-  const hudIn = document.querySelector('[data-hud-in]');
-  const hudOut = document.querySelector('[data-hud-out]');
-  if (hudIn) {
-    const upd = () => {
-      tintTarget = hudIn.value / 100;
-      if (hudOut) hudOut.textContent = hudIn.value + '%';
-      hudIn.style.setProperty('--p', (hudIn.value / hudIn.max) * 100 + '%');
-      poke();
-      if (reduce) { filmMat.uniforms.uTint.value = tintTarget; renderOnce(); }
-    };
-    hudIn.addEventListener('input', upd); upd();
+  const ptr = { x: 0, y: 0, tx: 0, ty: 0, cx: 0, cy: 0, over: false };
+  const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), ceilPlane = new THREE.Plane(new THREE.Vector3(0, -1, 0), H - 0.03), hit = new THREE.Vector3();
+  let hover = null;              // точка на потолке под курсором
+  const waves = [];              // волны света от кликов
+  function ceilingAt(clientX, clientY) {
+    const r = canvas.getBoundingClientRect();
+    ndc.set(((clientX - r.left) / r.width) * 2 - 1, -((clientY - r.top) / r.height) * 2 + 1);
+    ray.setFromCamera(ndc, camera);
+    if (ray.ray.direction.y <= 0.02) return null;
+    return ray.ray.intersectPlane(ceilPlane, hit) ? { x: hit.x, z: hit.z } : null;
   }
+  if (!coarse) {
+    addEventListener('pointermove', (e) => {
+      ptr.tx = (e.clientX / innerWidth) * 2 - 1; ptr.ty = (e.clientY / innerHeight) * 2 - 1;
+      ptr.cx = e.clientX; ptr.cy = e.clientY;
+      const r = hero.getBoundingClientRect();
+      ptr.over = e.clientY >= r.top && e.clientY <= r.bottom;
+      poke();
+    }, { passive: true });
+  }
+  hero.addEventListener('click', (e) => {
+    if (e.target.closest('a, button, input, label')) return;
+    const p = ceilingAt(e.clientX, e.clientY);
+    if (p) { waves.push({ x: p.x, z: p.z, t: 0 }); poke(); }
+  });
+  addEventListener('scroll', poke, { passive: true });
 
   let visible = true;
   new IntersectionObserver(([e]) => { visible = e.isIntersecting; if (visible) poke(); }, { threshold: 0 }).observe(canvas);
 
   /* ---------- цикл ---------- */
   let started = false, introT = 0, last = performance.now(), lastDraw = 0, simT = 0;
-  const filmStart = 2.0;
   const tmpLook = new THREE.Vector3();
-  // адаптивное качество
   let level = 0, samples = [];
 
-  function setLights(t) {
+  function intro(t) {
     let on = 0;
-    for (let i = 0; i < E.length; i++) {
+    for (let i = 0; i < N; i++) {
       const dt = t - delays[i];
       let b;
       if (dt < 0) b = 0;
       else if (dt < 0.42) { const n = Math.sin((t + i * 13.7) * 91.3) * 437.1; b = (n - Math.floor(n)) > 0.45 ? 1 : 0.08; }
       else b = 1;
-      on += b;
-      tubes.setColorAt(i, tubeCol.setScalar(b * LED));
+      base[i] = b; on += b;
     }
-    tubes.instanceColor.needsUpdate = true;
-    const k = on / E.length;
+    const k = on / N;
     pls.forEach((p) => (p.intensity = PL * k));
     colMat.emissiveIntensity = 0.07 * k;
   }
 
-  function scrollProg() {
-    const r = hero.getBoundingClientRect();
-    return Math.min(1, Math.max(0, -r.top / r.height));
+  // целевая подсветка каждой лампы: пятно под курсором + кольца волн
+  function updateGlow(dt) {
+    let any = false;
+    if (ptr.over && !coarse) hover = ceilingAt(ptr.cx, ptr.cy); else hover = null;
+    for (let w = waves.length - 1; w >= 0; w--) { waves[w].t += dt; if (waves[w].t > 2.8) waves.splice(w, 1); }
+    for (let i = 0; i < N; i++) {
+      let g = 0;
+      if (hover) { const dx = E[i].mx - hover.x, dz = E[i].mz - hover.z; g = Math.exp(-(dx * dx + dz * dz) / 4.5); }
+      for (let w = 0; w < waves.length; w++) {
+        const wv = waves[w], d = Math.hypot(E[i].mx - wv.x, E[i].mz - wv.z), r = wv.t * 7, fade = 1 - wv.t / 2.8;
+        g = Math.max(g, Math.exp(-((d - r) * (d - r)) / 2.2) * fade);
+      }
+      glow[i] += (g - glow[i]) * Math.min(1, dt * 9);   // dt здесь — реальное время
+      if (glow[i] > 0.004) any = true; else glow[i] = 0;
+    }
+    return any || waves.length > 0;
   }
 
   function degrade() {
@@ -385,12 +304,18 @@ function init() {
     samples = [];
   }
 
-  function draw(dt) {
+  function scrollProg() {
+    const r = hero.getBoundingClientRect();
+    return Math.min(1, Math.max(0, -r.top / r.height));
+  }
+
+  // dt — сглаженный шаг для камеры и пыли; rt — реальное время: включение ламп и волны идут
+  // с одинаковой скоростью на любом устройстве, даже если кадров мало
+  function draw(dt, rt) {
     simT += dt;
-    if (introT < 2.4) { introT += dt; setLights(introT); }
-    if (introT > filmStart && filmMat.uniforms.uProg.value < 1) filmMat.uniforms.uProg.value = Math.min(1, filmMat.uniforms.uProg.value + dt / 1.7);
-    filmMat.uniforms.uTime.value = simT;
-    filmMat.uniforms.uTint.value += (tintTarget - filmMat.uniforms.uTint.value) * Math.min(1, dt * 6);
+    if (introT < 2.4) { introT += rt; intro(introT); }
+    const glowing = updateGlow(rt);
+    paintLamps();
 
     ptr.x += (ptr.tx - ptr.x) * 0.06; ptr.y += (ptr.ty - ptr.y) * 0.06;
     const sp = scrollProg();
@@ -398,49 +323,47 @@ function init() {
     tmpLook.set(lookBase.x + ptr.x * 0.25, lookBase.y - ptr.y * 0.1 + sp * 0.6, lookBase.z);
     camera.lookAt(tmpLook);
 
-    glassGroup.position.set(glassBase.x, glassBase.y + Math.sin(simT * 0.9) * 0.05, glassBase.z);
-    glassGroup.rotation.set(0.04 + ptr.y * 0.08 + Math.sin(simT * 0.6) * 0.02, -0.5 + ptr.x * 0.28 + Math.sin(simT * 0.4) * 0.05 - sp * 0.6, 0.015);
-
     const pa = dgeo.attributes.position.array;
     for (let i = 0; i < dustN; i++) { pa[i * 3 + 1] += dt * 0.05; if (pa[i * 3 + 1] > H) pa[i * 3 + 1] = 0; }
     dgeo.attributes.position.needsUpdate = true;
 
     if (useBloom) composer.render(); else renderer.render(scene, camera);
+    return glowing;
   }
 
+  let glowingNow = false;
   function frame(now) {
     requestAnimationFrame(frame);
     if (!visible || document.hidden) { last = now; return; }
-    // в простое (нет мыши/скролла 2.5 с, интро закончилось) — 30 кадров в секунду
-    const idle = introT >= 2.4 && filmMat.uniforms.uProg.value >= 1 && now - lastPoke > 2500 && Math.abs(tintTarget - filmMat.uniforms.uTint.value) < 0.002;
+    // в простое (нет мыши/скролла 2.5 с, интро закончилось, подсветка погасла) — 30 кадров в секунду
+    const idle = introT >= 2.4 && !glowingNow && now - lastPoke > 2500;
     if (idle && now - lastDraw < 32) return;
-    const dt = Math.min((now - last) / 1000, 0.05);
+    const rt = Math.min((now - last) / 1000, 0.25), dt = Math.min(rt, 0.05);
     last = now;
-    draw(dt);
+    glowingNow = draw(dt, rt);
     lastDraw = now;
     if (!started) { started = true; html.classList.add('gl-on'); }
-    // замер: если кадры стабильно тяжёлые — снижаем качество
     if (!idle && level < 3) {
       samples.push(now - (frame.prev || now));
       if (samples.length > 45) {
         samples.sort((a, b) => a - b);
-        const med = samples[Math.floor(samples.length / 2)];
-        if (med > 24) degrade(); else samples = [];
+        if (samples[Math.floor(samples.length / 2)] > 24) degrade(); else samples = [];
       }
     }
     frame.prev = now;
   }
 
   function renderOnce() {
-    setLights(10);
-    filmMat.uniforms.uProg.value = 1;
+    base.fill(1); glow.fill(0);
+    intro(10); base.fill(1);
+    paintLamps();
     camera.position.copy(camBase); camera.lookAt(lookBase);
-    glassGroup.rotation.set(0.04, -0.5, 0.015);
     composer.render();
     html.classList.add('gl-on');
   }
 
   layout();
+  paintLamps();
   if (reduce) renderOnce();
   else requestAnimationFrame(frame);
 }

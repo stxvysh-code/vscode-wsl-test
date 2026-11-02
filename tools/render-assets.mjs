@@ -40,7 +40,7 @@ async function scene(name, shot, width, height) {
 }
 
 const poster = await scene('poster', 'poster', 1920, 1080);
-const portrait = await scene('poster-portrait', 'poster', 800, 800);
+const portrait = await scene('poster-portrait', 'poster', 800, 1500);
 const stage = await scene('stage', 'stage', 1600, 1200);
 
 const conv = `

@@ -101,6 +101,7 @@
       });
     });
   }
+  var fromPT = html.classList.contains('pt-in'), T0 = performance.now();
   enter();
   w.addEventListener('pageshow', function (e) { if (e.persisted && pt) { pt.classList.remove('is-leave'); html.classList.remove('pt-in'); } });
   d.addEventListener('click', function (e) {
@@ -169,7 +170,10 @@
     });
   }
 
-  /* ---------- появление фото: разные маски (rise, led, wipe-l, wipe-r, pill, diag, focus) ---------- */
+  /* ---------- появление фото: 11 разных типов ----------
+     rise, led, wipe-l, wipe-r, pill, diag, focus — маски/фокус;
+     hex — соты из центра с золотым контуром (как лампы в боксе); blinds — LED-полосы загораются по очереди;
+     flip — фото откидывается панелью; lamp — фото «включается» с мерцанием ламп и бликом. */
   var IMG_FROM = {
     rise: 'inset(100% 0% 0% 0%)', led: 'inset(0% 0% 100% 0%)', 'wipe-l': 'inset(0% 100% 0% 0%)', 'wipe-r': 'inset(0% 0% 0% 100%)',
     pill: 'inset(26% 32% 26% 32% round 999px)', diag: 'polygon(0% 0%, 0% 0%, -30% 100%, -30% 100%)'
@@ -178,25 +182,99 @@
     rise: 'inset(0% 0% 0% 0%)', led: 'inset(0% 0% 0% 0%)', 'wipe-l': 'inset(0% 0% 0% 0%)', 'wipe-r': 'inset(0% 0% 0% 0%)',
     pill: 'inset(0% 0% 0% 0% round 0px)', diag: 'polygon(0% 0%, 130% 0%, 100% 100%, -30% 100%)'
   };
+  function hexPts(r) {
+    var p = [];
+    for (var k = 0; k < 6; k++) { var a = Math.PI / 3 * k + Math.PI / 6; p.push([50 + r * Math.cos(a), 50 + r * Math.sin(a)]); }
+    return p;
+  }
+  function hexClip(r) { return 'polygon(' + hexPts(r).map(function (q) { return q[0].toFixed(2) + '% ' + q[1].toFixed(2) + '%'; }).join(', ') + ')'; }
+  function stairClip(xs) {   // LED-полосы: лесенка из N горизонтальных полос, у каждой своя длина (0–100%)
+    var n = xs.length, pts = ['0% 0%'];
+    for (var i = 0; i < n; i++) { var y0 = (i / n * 100).toFixed(2), y1 = ((i + 1) / n * 100).toFixed(2), x = xs[i].toFixed(2); pts.push(x + '% ' + y0 + '%', x + '% ' + y1 + '%'); }
+    pts.push('0% 100%');
+    return 'polygon(' + pts.join(', ') + ')';
+  }
+  function deco(el, cls, tag) { var n = d.createElement(tag || 'i'); n.className = cls; n.setAttribute('aria-hidden', 'true'); el.appendChild(n); return n; }
   function revealImg(el, delay) {
     if (el.__rev) return;
     el.__rev = true;
     if (!ANIM) { el.classList.add('is-revealed'); return; }
     var type = el.getAttribute('data-img'), im = el.querySelector('img');
-    var done = function () { el.classList.add('is-revealed'); gsap.set(el, { clearProps: 'clipPath,opacity,filter,transform' }); if (im) gsap.set(im, { clearProps: 'transform' }); };
+    if (el.hasAttribute('data-img-noscale')) im = null;   // у фонов свой «наезд» по скроллу
+    var junk = [];
+    var done = function () {
+      el.classList.add('is-revealed');
+      // снимаем только то, что меняла анимация: трансформацию контейнера не трогаем — у части фото есть параллакс
+      gsap.set(el, { clearProps: 'clipPath,opacity,filter' });
+      if (type === 'flip' || type === 'focus') gsap.set(el, { rotationX: 0, y: 0, transformPerspective: 0 });
+      if (im) gsap.set(im, { clearProps: 'transform' });   // чтобы снова работало увеличение фото при наведении
+      junk.forEach(function (n) { n.remove(); });
+    };
     var tl = gsap.timeline({ delay: delay || 0, onComplete: done });
+    var zoom = function (from, dur) { if (im) tl.fromTo(im, { scale: from }, { scale: 1, duration: dur, ease: 'expo.out' }, 0); };
+
     if (type === 'focus') {
       tl.fromTo(el, { opacity: 0, y: 46, filter: fine ? 'blur(12px)' : 'blur(0px)' }, { opacity: 1, y: 0, filter: 'blur(0px)', duration: 1.15, ease: 'power3.out' });
-      if (im) tl.fromTo(im, { scale: 1.12 }, { scale: 1, duration: 1.6, ease: 'expo.out' }, 0);
+      zoom(1.12, 1.6);
       return;
     }
+    if (type === 'hex') {
+      var o = { r: 0 }, svgNS = 'http://www.w3.org/2000/svg';
+      var svg = d.createElementNS(svgNS, 'svg'); svg.setAttribute('class', 'img-hex'); svg.setAttribute('viewBox', '0 0 100 100'); svg.setAttribute('preserveAspectRatio', 'none'); svg.setAttribute('aria-hidden', 'true');
+      var poly = d.createElementNS(svgNS, 'polygon'); svg.appendChild(poly); el.appendChild(svg); junk.push(svg);
+      var paint = function () { el.style.clipPath = hexClip(o.r); poly.setAttribute('points', hexPts(o.r).map(function (q) { return q[0] + ',' + q[1]; }).join(' ')); };
+      paint();
+      tl.to(o, { r: 96, duration: 1.5, ease: 'expo.inOut', onUpdate: paint }, 0)
+        .to(svg, { opacity: 0, duration: 0.5 }, 1.0);
+      zoom(1.3, 2.1);
+      return;
+    }
+    if (type === 'blinds') {
+      var N = 6, st = { p: 0 }, xs = [];
+      var paintB = function () {
+        for (var i = 0; i < N; i++) { var k = Math.min(1, Math.max(0, st.p * (1 + (N - 1) * 0.16) - i * 0.16)); xs[i] = 100 * (1 - Math.pow(1 - k, 3)); }
+        el.style.clipPath = stairClip(xs);
+      };
+      paintB();
+      tl.to(st, { p: 1, duration: 1.45, ease: 'power1.inOut', onUpdate: paintB }, 0);
+      zoom(1.16, 2);
+      return;
+    }
+    if (type === 'flip') {
+      tl.fromTo(el, { transformPerspective: 1100, rotationX: 72, transformOrigin: '50% 100%', opacity: 0, filter: 'brightness(.35)' },
+        { rotationX: 0, opacity: 1, filter: 'brightness(1)', duration: 1.35, ease: 'expo.out' }, 0);
+      zoom(1.08, 1.6);
+      return;
+    }
+    if (type === 'lamp') {
+      var sw = deco(el, 'img-sweep'); junk.push(sw);
+      gsap.set(sw, { xPercent: -70, opacity: 0 });
+      tl.set(el, { filter: 'brightness(.05)' }, 0)
+        .to(el, { filter: 'brightness(.95)', duration: 0.06 }, 0.05)
+        .to(el, { filter: 'brightness(.12)', duration: 0.08 }, 0.13)
+        .to(el, { filter: 'brightness(.85)', duration: 0.05 }, 0.3)
+        .to(el, { filter: 'brightness(.3)', duration: 0.1 }, 0.38)
+        .to(el, { filter: 'brightness(1)', duration: 0.6, ease: 'power2.out' }, 0.55)
+        .to(sw, { opacity: 1, duration: 0.2 }, 0.6)
+        .to(sw, { xPercent: 70, duration: 1.1, ease: 'power2.inOut' }, 0.6)
+        .to(sw, { opacity: 0, duration: 0.3 }, 1.4);
+      zoom(1.1, 2);
+      return;
+    }
+
     var dur = type === 'pill' ? 1.55 : type === 'diag' ? 1.45 : type === 'led' ? 1.35 : 1.25;
     tl.fromTo(el, { clipPath: IMG_FROM[type] }, { clipPath: IMG_TO[type], duration: dur, ease: type === 'pill' ? 'expo.inOut' : 'power4.inOut' }, 0);
-    if (im) tl.fromTo(im, { scale: 1.22 }, { scale: 1, duration: dur + 0.6, ease: 'expo.out' }, 0);
+    zoom(1.22, dur + 0.6);
     if (type === 'led') {
-      var line = d.createElement('i'); line.className = 'img-led'; line.setAttribute('aria-hidden', 'true'); el.appendChild(line);
+      var line = deco(el, 'img-led'); junk.push(line);
       tl.fromTo(line, { top: '0%', opacity: 1 }, { top: '100%', duration: dur, ease: 'power4.inOut' }, 0)
-        .to(line, { opacity: 0, duration: 0.35, onComplete: function () { line.remove(); } });
+        .to(line, { opacity: 0, duration: 0.35 });
+    }
+    if (type === 'wipe-l' || type === 'wipe-r') {   // золотая кромка, как у ракеля при оклейке
+      var edge = deco(el, 'img-edge'); junk.push(edge);
+      var L = type === 'wipe-l';
+      tl.fromTo(edge, { left: L ? '0%' : '100%', opacity: 1 }, { left: L ? '100%' : '0%', duration: dur, ease: 'power4.inOut' }, 0)
+        .to(edge, { opacity: 0, duration: 0.3 });
     }
   }
 
@@ -489,6 +567,13 @@
           trigger: hs, start: 'top top', end: function () { return '+=' + dist(); }, scrub: 0.6, pin: true, invalidateOnRefresh: true, anticipatePin: 1,
           onUpdate: function (self) { if (cnt) cnt.textContent = String(Math.min(n, 1 + Math.floor(self.progress * n))).padStart(2, '0'); }
         } });
+        // каждая карточка появляется, когда въезжает в экран при горизонтальной прокрутке
+        // те, что видны сразу, — при прокрутке вниз; остальные — когда въезжают в экран при горизонтальной прокрутке
+        $$('[data-img]', track).forEach(function (el, k) {
+          var visibleAtStart = el.getBoundingClientRect().left < w.innerWidth * 0.9;
+          if (visibleAtStart) ST.create({ trigger: el, start: 'top 88%', once: true, onEnter: function () { revealImg(el, k * 0.12); } });
+          else ST.create({ trigger: el, containerAnimation: tw, start: 'left 90%', once: true, onEnter: function () { revealImg(el, 0); } });
+        });
         $$('.wcard__img img', track).forEach(function (im) {
           gsap.fromTo(im, { xPercent: -6, scale: 1.12 }, { xPercent: 6, ease: 'none', scrollTrigger: { trigger: im.parentElement, containerAnimation: tw, start: 'left right', end: 'right left', scrub: true } });
         });
@@ -505,7 +590,6 @@
     tl.from('.hero__eyebrow', { opacity: 0, y: 20, duration: 0.8, ease: 'power3.out' })
       .from(heroT, { yPercent: 125, duration: 1.2, ease: 'expo.out', stagger: 0.09 }, '-=0.5')
       .from('.hero__meta > *, .hero__btns > *', { opacity: 0, y: 24, duration: 0.8, ease: 'power3.out', stagger: 0.06 }, '-=0.8')
-      .from('.hero__hud', { opacity: 0, x: 30, duration: 1, ease: 'power3.out' }, '-=0.6')
       .from('.stat', { opacity: 0, y: 20, duration: 0.8, stagger: 0.07, ease: 'power3.out' }, '-=0.8')
       .from('.hero__word span', { opacity: 0, yPercent: 20, duration: 2, stagger: 0.15, ease: 'expo.out' }, 0.2);
     gsap.to('.hero__word', { yPercent: 30, ease: 'none', scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true } });
@@ -525,7 +609,23 @@
   } });
 
   // фото: появление по скроллу (разные маски) + плавный «наезд» фона в призывах
-  ST.batch('[data-img]', { start: 'top 88%', once: true, onEnter: function (els) { els.forEach(function (el, i) { revealImg(el, i * 0.12 + (el.closest('.phero') ? 0.35 : 0)); }); } });
+  var imgs = $$('[data-img]').filter(function (el) { return !el.closest('[data-htrack]'); });
+  ST.batch(imgs, { start: 'top 88%', once: true, onEnter: function (els) {
+    var wait = fromPT && performance.now() - T0 < 1400 ? 0.55 : 0;
+    els.forEach(function (el, i) { revealImg(el, wait + i * 0.12 + (el.closest('.phero') ? 0.3 : 0)); });
+  } });
+  // горизонтальная лента «Наши работы» на телефоне: карточка появляется, когда въезжает в ленту
+  var htrack = $('[data-htrack]');
+  if (htrack && 'IntersectionObserver' in w) {
+    var hio = new IntersectionObserver(function (es) {
+      es.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        var r = e.target.getBoundingClientRect();
+        if (r.top < w.innerHeight && r.bottom > 0 && !w.matchMedia('(min-width: 961px)').matches) { revealImg(e.target, 0); hio.unobserve(e.target); }
+      });
+    }, { root: htrack, threshold: 0.2 });
+    $$('[data-img]', htrack).forEach(function (el) { hio.observe(el); });
+  }
   $$('.cta__bg img').forEach(function (im) {
     gsap.fromTo(im, { scale: 1.25 }, { scale: 1, ease: 'none', scrollTrigger: { trigger: im.closest('.cta'), start: 'top bottom', end: 'center center', scrub: true } });
   });
@@ -533,7 +633,7 @@
   // страховка: если блок уже на экране, но не появился (сбой расчёта позиций) — показать его.
   // Проверяем только ещё не показанные элементы, в простое браузера; когда показано всё — останавливаемся.
   var pending = $$('[data-img], [data-reveal], [data-split]');
-  function inView(el) { var r = el.getBoundingClientRect(); return r.height > 0 && r.top < w.innerHeight * 0.96 && r.bottom > 0; }
+  function inView(el) { var r = el.getBoundingClientRect(); return r.height > 0 && r.top < w.innerHeight * 0.96 && r.bottom > 0 && r.left < w.innerWidth * 0.96 && r.right > 0; }
   function sweep() {
     pending = pending.filter(function (el) {
       var isImg = el.hasAttribute('data-img');

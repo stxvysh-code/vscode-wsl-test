@@ -323,8 +323,8 @@ function init() {
       glassGroup.position.set(2.3, 2.4, -1.0);
       glassGroup.scale.setScalar(0.64);
     } else {
-      glassGroup.position.set(2.75, 2.42, -0.8);
-      glassGroup.scale.setScalar(0.72);
+      glassGroup.position.set(3.15, 2.5, -0.8);
+      glassGroup.scale.setScalar(0.64);
     }
     glassBase.copy(glassGroup.position);
   }

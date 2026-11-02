@@ -10,7 +10,7 @@ const D = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/site.json'), 'utf8'))
 const MANIFEST = JSON.parse(fs.readFileSync(path.join(ROOT, 'assets/img/manifest.json'), 'utf8'));
 // Укажите домен, когда он появится (например 'https://arttonir.ru') — подставится в canonical, og:url и sitemap.
 const SITE_URL = '';
-const VERSION = '2';
+const VERSION = '3';
 
 /* ───────────────────────── helpers ───────────────────────── */
 const esc = (s = '') => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -275,6 +275,7 @@ const mobileBar = () => `<div class="mbar" aria-label="Быстрая связь
   <a class="mbar__main" href="${wa()}" target="_blank" rel="noopener">${ic('wa')}<span>Записаться</span></a>
   <a href="${TEL}" aria-label="Позвонить">${ic('phone')}<span>Звонок</span></a>
   <a href="${TG}" target="_blank" rel="noopener" aria-label="Telegram">${ic('tg')}<span>Telegram</span></a>
+  <button class="mbar__smeta" type="button" data-smeta-open hidden aria-label="Открыть смету">${ic('list')}<span>Смета</span><b data-smeta-count>0</b></button>
 </div>`;
 
 const smeta = () => `<button class="smeta-fab" type="button" data-smeta-open aria-label="Открыть смету" hidden>
@@ -403,7 +404,7 @@ const marquee = (words, cls = '') => `<div class="marquee ${cls}" aria-hidden="t
 function serviceRow(s, i) {
   const pics = s.imgs.map((p, k) => img(p, `${s.name} — ART TONIR, Бийск${k ? ' (фото 2)' : ''}`, { sizes: '(max-width: 760px) 92vw, 440px' })).join('');
   return `<article class="svc" id="${s.id}" data-reveal>
-  <div class="svc__media${s.imgs.length > 1 ? ' svc__media--duo' : ''}" data-tint>${pics}</div>
+  <div class="svc__media${s.imgs.length > 1 ? ' svc__media--duo' : ''}" data-img="${i % 2 ? 'wipe-r' : 'wipe-l'}">${pics}</div>
   <div class="svc__body">
     <p class="svc__idx">${s.id.replace('s', '№ ')}</p>
     <h3 class="svc__name">${esc(s.name)}</h3>
@@ -449,129 +450,61 @@ function crumbs(items) {
   return `<nav class="crumbs" aria-label="Хлебные крошки"><a href="index.html">Главная</a>${items.map(([t, h]) => (h ? `<span>/</span><a href="${h}">${t}</a>` : `<span>/</span><span aria-current="page">${t}</span>`)).join('')}</nav>`;
 }
 
-/* SVG-автомобиль для визуализаторов (вид сбоку, кроссовер-купе) */
-function carSVG(mode) {
-  const BODY = 'M96 318C82 316 78 300 80 282L84 236C86 214 96 200 118 194C170 170 220 124 292 108C380 92 520 90 590 98C640 104 680 128 712 160C730 176 760 184 800 190L900 206C936 212 952 228 954 252L956 290C956 310 946 318 928 320H858A86 86 0 0 0 686 320H336A86 86 0 0 0 164 320Z';
-  const DLO = 'M200 190C232 160 262 136 306 124C384 106 522 104 584 110C622 114 652 132 680 164L700 190Z';
-  const wheel = (x) => `<g class="car__wheel" transform="translate(${x} 326)">
-      <circle r="66" class="car__tire"/>
-      <circle r="49" fill="url(#g-rim-${mode})"/>
-      <path class="car__caliper" d="M-36 -14A38 38 0 0 1 -14 -36"/>
-      <g class="car__spokes">${[0, 72, 144, 216, 288].map((a) => `<path transform="rotate(${a})" d="M-3 -11L-11 -47H-3L0 -11ZM3 -11L11 -47H3L0 -11Z"/>`).join('')}</g>
-      <circle r="47" class="car__lip"/>
-      <circle r="10" class="car__hub"/>
-    </g>`;
-  return `<svg class="car" viewBox="0 0 1000 560" role="img" aria-label="Схема автомобиля сбоку">
-  <defs>
-    <linearGradient id="g-body-${mode}" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#fff" stop-opacity=".5"/>
-      <stop offset=".3" stop-color="#fff" stop-opacity=".08"/>
-      <stop offset=".46" stop-color="#000" stop-opacity="0"/>
-      <stop offset=".72" stop-color="#000" stop-opacity=".18"/>
-      <stop offset="1" stop-color="#000" stop-opacity=".55"/>
-    </linearGradient>
-    <linearGradient id="g-side-${mode}" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#000" stop-opacity=".35"/><stop offset=".18" stop-color="#000" stop-opacity="0"/>
-      <stop offset=".82" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".3"/>
-    </linearGradient>
-    <linearGradient id="g-sky-${mode}" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#9aa6b3"/><stop offset=".55" stop-color="#4b535d"/><stop offset="1" stop-color="#262a30"/>
-    </linearGradient>
-    <linearGradient id="g-cham-${mode}" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#6b3cff"/><stop offset=".35" stop-color="#18c5b5"/><stop offset=".7" stop-color="#3f7bff"/><stop offset="1" stop-color="#b04cff"/>
-      <animateTransform attributeName="gradientTransform" type="translate" values="-0.6 0;0.6 0;-0.6 0" dur="6s" repeatCount="indefinite"/>
-    </linearGradient>
-    <linearGradient id="g-chrome-${mode}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset=".5" stop-color="#8d949b"/><stop offset="1" stop-color="#e8ebee"/></linearGradient>
-    <radialGradient id="g-rim-${mode}" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#2c2e33"/><stop offset=".8" stop-color="#16171a"/><stop offset="1" stop-color="#0a0a0b"/></radialGradient>
-    <linearGradient id="g-fade-${mode}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".9"/><stop offset=".35" stop-color="#fff" stop-opacity="0"/></linearGradient>
-    <mask id="m-fade-${mode}" maskUnits="userSpaceOnUse" x="0" y="392" width="1000" height="300"><rect x="0" y="392" width="1000" height="300" fill="url(#g-fade-${mode})"/></mask>
-    <clipPath id="c-glass-${mode}"><path d="${DLO}"/></clipPath>
-    <clipPath id="c-body-${mode}"><path d="${BODY}"/></clipPath>
-  </defs>
-  <use href="#car-main-${mode}" class="car__refl-g" transform="translate(0 784) scale(1 -1)" mask="url(#m-fade-${mode})"/>
-  <ellipse class="car__shadow" cx="518" cy="392" rx="460" ry="14"/>
-  <g id="car-main-${mode}">
-    <path class="car__body" d="${BODY}"/>
-    <g clip-path="url(#c-body-${mode})">
-      <rect x="70" y="80" width="900" height="260" fill="url(#g-body-${mode})" class="car__shade"/>
-      <rect x="70" y="80" width="900" height="260" fill="url(#g-side-${mode})"/>
-      <path class="car__band" d="M80 236C300 224 700 224 960 246V262C700 242 300 242 80 254Z"/>
-      <path class="car__clad" d="M60 300H990V330H60Z"/>
-    </g>
-    <path class="car__gloss" d="M112 224C300 212 700 212 944 236"/>
-    <path class="car__arch" d="M164 320A86 86 0 0 1 336 320M686 320A86 86 0 0 1 858 320"/>
-    <g class="car__glass" clip-path="url(#c-glass-${mode})">
-      <rect x="190" y="96" width="520" height="100" fill="url(#g-sky-${mode})"/>
-      <g class="car__inside"><rect x="404" y="140" width="34" height="46" rx="14"/><rect x="588" y="138" width="34" height="48" rx="14"/><path d="M640 186C640 164 656 152 672 160" fill="none" stroke="#202226" stroke-width="7" stroke-linecap="round"/></g>
-      <path class="car__led" d="M222 182L300 126M352 112L336 190M408 110L460 190M470 110L520 150M560 108L612 176M640 132L606 190"/>
-      <path class="tint tint--rear" d="M190 96H508V196H190Z"/>
-      <path class="tint tint--front" d="M508 96H710V196H508Z"/>
-    </g>
-    <path class="car__pillars" d="M290 126L310 122L326 190H304ZM500 104H516V190H500Z"/>
-    <path class="car__chrome" stroke="url(#g-chrome-${mode})" d="${DLO}"/>
-    <path class="car__lines" d="M516 194V302M318 194C322 240 326 276 330 298M704 196C712 230 712 270 700 300"/>
-    <path class="car__handle" d="M452 216h30M650 216h30"/>
-    <path class="car__mirror" d="M688 172C700 164 726 164 736 172L740 192H702Z"/>
-    <path class="car__tail" d="M82 222C82 214 88 210 98 208L126 202V213L86 230Z"/>
-    <path class="car__head" d="M896 214C918 216 940 222 950 234L952 240H908C902 232 898 224 896 214Z"/>
-    <path class="car__grille" d="M934 266H955V296H940Z"/>
-    ${wheel(250)}${wheel(772)}
-  </g>
-</svg>`;
-}
+/* Интерактивы на реальных фото студии */
+const toolHead = (eb, h2, lead) => `<div class="tool__head">${eyebrow(eb)}<h2 class="h2" data-split>${h2}</h2><p class="lead" data-reveal>${lead}</p></div>`;
+const GLC_IMG = `<img class="tool__img" src="assets/img/tools/glc.webp" width="1280" height="890" alt="Белый Mercedes GLC Coupe у бокса ART TONIR" loading="lazy" decoding="async">`;
 
 function toolBlock(kind) {
   if (kind === 'tint') {
     return `<section class="section tool tool--tint" data-tool="tint">
   <div class="container tool__grid">
-    <div class="tool__text">
-      ${eyebrow('Визуализатор')}
-      <h2 class="h2" data-split>Подберите <em>затемнение</em></h2>
-      <p class="lead" data-reveal>Двигайте ползунок — посмотрите, как меняется задняя полусфера. Для лобового и передних боковых стёкол — плёнки в пределах норм светопропускания (по ГОСТ) или атермальная.</p>
-      <div class="tool__ctrl" data-reveal>
+    ${toolHead('Визуализатор', 'Подберите <em>затемнение</em>', 'Двигайте ползунок — стёкла затемняются прямо на фото. Для лобового и передних боковых стёкол — плёнки в пределах норм светопропускания (по ГОСТ) или атермальная.')}
+    <div class="tool__stage tool__stage--photo" data-img="rise">
+      ${GLC_IMG}
+      <canvas class="tool__cv" aria-hidden="true"></canvas>
+      <span class="tool__badge" data-out="state">Задняя полусфера · 60%</span>
+    </div>
+    <div class="tool__panel" data-reveal>
+      <div class="tool__ctrl">
         <label class="range"><span class="range__lbl">Задняя полусфера <b data-out="rear">60%</b></span><input type="range" min="0" max="95" value="60" data-in="rear" aria-label="Затемнение задней полусферы"></label>
         <div class="seg" role="radiogroup" aria-label="Передние стёкла">
-          <span class="seg__lbl">Передние стёкла</span>
+          <span class="seg__lbl">Передние боковые стёкла</span>
           <button type="button" role="radio" aria-checked="true" data-front="none">Без плёнки</button>
           <button type="button" role="radio" aria-checked="false" data-front="athermal">Атермальная</button>
           <button type="button" role="radio" aria-checked="false" data-front="gost">По ГОСТ</button>
           <button type="button" role="radio" aria-checked="false" data-front="chameleon">Хамелеон</button>
         </div>
       </div>
-      <div class="tool__sum" data-reveal><span>Ориентир по прайсу</span><b data-out="sum">от 8 000 ₽</b></div>
-      <div class="btn-row" data-reveal><a class="btn btn--gold" data-tool-wa href="${wa()}" target="_blank" rel="noopener">${ic('wa')}<span>Записаться с этим выбором</span></a></div>
-      <p class="tool__note">Визуализация условная: реальный оттенок зависит от плёнки и автомобиля.</p>
-    </div>
-    <div class="tool__stage tool__stage--car" data-reveal>
-      ${carSVG('tint')}
+      <div class="tool__sum"><span>Ориентир по прайсу</span><b data-out="sum">от 8 000 ₽</b></div>
+      <div class="btn-row"><a class="btn btn--gold" data-tool-wa href="${wa()}" target="_blank" rel="noopener">${ic('wa')}<span>Записаться с этим выбором</span></a></div>
+      <p class="tool__note">Фото — из галереи студии. Затемнение показано условно: реальный оттенок зависит от плёнки.</p>
     </div>
   </div>
 </section>`;
   }
   if (kind === 'color') {
-    const sw = [['#0d0d0f', 'Чёрный'], ['#f2f2ef', 'Белый'], ['#8f9396', 'Серый'], ['#4f5a3a', 'Олива'], ['#7b1e22', 'Бордо'], ['#1f3a68', 'Синий'], ['#c5a465', 'Золото'], ['#d8d21e', 'Кислотный']];
+    const sw = [['#0d0d0f', 'Чёрный'], ['#f2f2ef', 'Белый'], ['#7d8287', 'Серый'], ['#56603f', 'Олива'], ['#7b1e22', 'Бордо'], ['#1f3a68', 'Синий'], ['#b8945a', 'Золото'], ['#d8d21e', 'Кислотный']];
     return `<section class="section tool tool--color" data-tool="color">
   <div class="container tool__grid">
-    <div class="tool__text">
-      ${eyebrow('Визуализатор')}
-      <h2 class="h2" data-split>Примерьте <em>новый цвет</em></h2>
-      <p class="lead" data-reveal>Цвет, фактура и антихром — посмотрите, как может измениться машина без покраски.</p>
-      <div class="tool__ctrl" data-reveal>
-        <div class="swatches" role="radiogroup" aria-label="Цвет плёнки">${sw.map(([c, n], i) => `<button type="button" role="radio" aria-checked="${i === 3}" data-color="${c}" style="--c:${c}" aria-label="${n}" title="${n}"></button>`).join('')}</div>
+    ${toolHead('Визуализатор', 'Примерьте <em>новый цвет</em>', 'Выберите цвет и фактуру — плёнка «оклеит» машину прямо на фото. Так выглядит замена цвета без покраски.')}
+    <div class="tool__stage tool__stage--photo" data-img="rise">
+      ${GLC_IMG}
+      <canvas class="tool__cv" aria-hidden="true"></canvas>
+      <span class="tool__badge" data-out="state">Оригинальный цвет</span>
+    </div>
+    <div class="tool__panel" data-reveal>
+      <div class="tool__ctrl">
+        <div class="swatches" role="radiogroup" aria-label="Цвет плёнки">${sw.map(([c, n]) => `<button type="button" role="radio" aria-checked="false" data-color="${c}" style="--c:${c}" aria-label="${n}" title="${n}"></button>`).join('')}</div>
         <div class="seg" role="radiogroup" aria-label="Фактура">
           <span class="seg__lbl">Фактура</span>
           <button type="button" role="radio" aria-checked="true" data-finish="gloss">Глянец</button>
           <button type="button" role="radio" aria-checked="false" data-finish="satin">Сатин</button>
           <button type="button" role="radio" aria-checked="false" data-finish="matte">Мат</button>
         </div>
-        <label class="switch"><input type="checkbox" data-antichrome><span class="switch__ui" aria-hidden="true"></span><span>Антихром — хром в чёрный</span></label>
       </div>
-      <div class="tool__sum" data-reveal><span>Ориентир по прайсу</span><b data-out="sum">от 150 000 ₽</b></div>
-      <div class="btn-row" data-reveal><a class="btn btn--gold" data-tool-wa href="${wa()}" target="_blank" rel="noopener">${ic('wa')}<span>Обсудить цвет в WhatsApp</span></a></div>
-      <p class="tool__note">Цвета на экране условные. Палитру плёнок в наличии уточняйте у мастера.</p>
-    </div>
-    <div class="tool__stage tool__stage--car" data-reveal>
-      ${carSVG('color')}
+      <div class="tool__sum"><span>Замена цвета / мат / глянец</span><b>от 150&nbsp;000&nbsp;₽</b></div>
+      <div class="btn-row"><a class="btn btn--gold" data-tool-wa href="${wa()}" target="_blank" rel="noopener">${ic('wa')}<span>Обсудить цвет в WhatsApp</span></a></div>
+      <p class="tool__note">Фото — из галереи студии, цвет наложен условно. Палитру плёнок в наличии уточняйте у мастера.</p>
     </div>
   </div>
 </section>`;
@@ -579,20 +512,19 @@ function toolBlock(kind) {
   if (kind === 'stone') {
     return `<section class="section tool tool--stone" data-tool="stone">
   <div class="container tool__grid">
-    <div class="tool__text">
-      ${eyebrow('Интерактив')}
-      <h2 class="h2" data-split>Камень <em>в капот</em></h2>
-      <p class="lead" data-reveal>Нажимайте на панель — по ней полетят камни с дороги. Включите плёнку и сравните. Полиуретан берёт удар на себя и защищает лак от сколов, царапин, реагентов и выгорания.</p>
-      <div class="tool__ctrl" data-reveal>
-        <label class="switch switch--big"><input type="checkbox" data-film checked><span class="switch__ui" aria-hidden="true"></span><span>Полиуретановая плёнка</span></label>
-        <div class="tool__meter"><span>Сколов на ЛКП</span><b data-out="chips">0</b></div>
-      </div>
-      <div class="btn-row" data-reveal>${btnWA('Записаться на оклейку', waService('Кузов целиком в полиуретановую плёнку'))}</div>
-      <p class="tool__note">Демонстрация условная.</p>
-    </div>
-    <div class="tool__stage tool__stage--panel" data-reveal data-cursor="Бросить">
-      <canvas aria-label="Интерактивная панель: нажмите, чтобы бросить камень"></canvas>
+    ${toolHead('Интерактив', 'Камень <em>в капот</em>', 'Нажимайте на машину — в неё полетят камни с дороги. Выключите плёнку и сравните: полиуретан берёт удар на себя и защищает лак от сколов, царапин, реагентов и выгорания.')}
+    <div class="tool__stage tool__stage--photo tool__stage--x6" data-img="rise" data-cursor="Бросить">
+      <img class="tool__img" src="assets/img/gallery/17_bmw-x6-black_snow-1280.webp" width="1280" height="890" alt="Чёрный BMW X6 с рамкой номера ArTonir" loading="lazy" decoding="async">
+      <canvas class="tool__cv" aria-label="Нажмите на машину, чтобы бросить камень"></canvas>
       <span class="tool__badge" data-out="state">Плёнка: включена</span>
+    </div>
+    <div class="tool__panel" data-reveal>
+      <div class="tool__ctrl">
+        <label class="switch switch--big"><input type="checkbox" data-film checked><span class="switch__ui" aria-hidden="true"></span><span>Полиуретановая плёнка</span></label>
+        <div class="tool__meter"><span>Сколов на лаке</span><b data-out="chips">0</b></div>
+      </div>
+      <div class="btn-row">${btnWA('Записаться на оклейку', waService('Кузов целиком в полиуретановую плёнку'))}</div>
+      <p class="tool__note">Фото — из галереи студии. Демонстрация условная.</p>
     </div>
   </div>
 </section>`;
@@ -600,20 +532,19 @@ function toolBlock(kind) {
   if (kind === 'noise') {
     return `<section class="section tool tool--noise" data-tool="noise">
   <div class="container tool__grid">
-    <div class="tool__text">
-      ${eyebrow('Послушайте')}
-      <h2 class="h2" data-split>Дорога — <em>тише</em></h2>
-      <p class="lead" data-reveal>Включите звук дороги и переключите шумоизоляцию. Так ощущается разница: меньше гула от шин, камней и неровностей покрытия.</p>
-      <div class="tool__ctrl" data-reveal>
+    ${toolHead('Послушайте', 'Дорога — <em>тише</em>', 'Включите звук дороги и переключите шумоизоляцию. Так ощущается разница: меньше гула от шин, камней и неровностей покрытия.')}
+    <div class="tool__stage tool__stage--photo tool__stage--noise" data-img="rise">
+      <img class="tool__img" src="assets/img/tools/noise-doors.webp" width="900" height="576" alt="Дверь автомобиля с уложенной шумоизоляцией" loading="lazy" decoding="async">
+      <canvas class="tool__cv" aria-hidden="true"></canvas>
+      <span class="tool__badge" data-out="state">Без шумоизоляции</span>
+    </div>
+    <div class="tool__panel" data-reveal>
+      <div class="tool__ctrl">
         <button class="btn btn--ghost" type="button" data-noise-play>${ic('sound')}<span>Включить звук дороги</span></button>
         <label class="switch switch--big"><input type="checkbox" data-iso><span class="switch__ui" aria-hidden="true"></span><span>Шумоизоляция</span></label>
       </div>
-      <div class="btn-row" data-reveal>${btnWA('Записаться на шумоизоляцию', waService('Шумоизоляция'))}</div>
-      <p class="tool__note">Условная демонстрация, звук синтезирован. Насколько станет тише — зависит от автомобиля и объёма работ.</p>
-    </div>
-    <div class="tool__stage tool__stage--wave" data-reveal>
-      <canvas aria-hidden="true"></canvas>
-      <span class="tool__badge" data-out="state">Без шумоизоляции</span>
+      <div class="btn-row">${btnWA('Записаться на шумоизоляцию', waService('Шумоизоляция'))}</div>
+      <p class="tool__note">Фото — шумоизоляция дверей из работ студии. Звук синтезирован, демонстрация условная: насколько станет тише — зависит от автомобиля и объёма работ.</p>
     </div>
   </div>
 </section>`;
@@ -621,20 +552,18 @@ function toolBlock(kind) {
   if (kind === 'rain') {
     return `<section class="section tool tool--rain" data-tool="rain">
   <div class="container tool__grid">
-    <div class="tool__text">
-      ${eyebrow('Интерактив')}
-      <h2 class="h2" data-split>Антидождь: <em>до и после</em></h2>
-      <p class="lead" data-reveal>Тяните разделитель. Слева — обычное стекло, справа — с гидрофобным покрытием: вода собирается в капли и скатывается, стекло проще очищать от воды и грязи.</p>
-      <div class="tool__sum" data-reveal><span>Антидождь на стёкла</span><b>от 4&nbsp;000&nbsp;₽</b></div>
-      <div class="btn-row" data-reveal>${btnWA('Записаться', waService('Антидождь на стёкла'))}</div>
-      <p class="tool__note">Демонстрация условная.</p>
-    </div>
-    <div class="tool__stage tool__stage--rain" data-reveal data-cursor="Тянуть">
+    ${toolHead('Интерактив', 'Антидождь: <em>до и после</em>', 'Тяните разделитель. Слева — обычное стекло, справа — с гидрофобным покрытием: вода собирается в капли и скатывается, стекло проще очищать от воды и грязи.')}
+    <div class="tool__stage tool__stage--rain" data-img="rise" data-cursor="Тянуть">
       ${img('gallery/23_range-rover-white_snow', '', { sizes: '(max-width: 900px) 92vw, 640px', cls: 'tool__bgimg' })}
       <canvas aria-label="Сравнение: обычное стекло и стекло с антидождём"></canvas>
       <div class="split" style="--x:50%"><span class="split__line"></span><span class="split__knob">${ic('arrow')}</span></div>
       <span class="tool__badge tool__badge--l">Обычное стекло</span>
       <span class="tool__badge tool__badge--r">С антидождём</span>
+    </div>
+    <div class="tool__panel" data-reveal>
+      <div class="tool__sum"><span>Антидождь на стёкла</span><b>от 4&nbsp;000&nbsp;₽</b></div>
+      <div class="btn-row">${btnWA('Записаться', waService('Антидождь на стёкла'))}</div>
+      <p class="tool__note">Демонстрация условная.</p>
     </div>
   </div>
 </section>`;
@@ -655,7 +584,7 @@ function buildIndex() {
   const body = `
 <section class="hero" data-hero>
   <canvas class="hero__gl" aria-hidden="true"></canvas>
-  <div class="hero__fallback" aria-hidden="true"><picture><source media="(max-height: 520px) and (orientation: landscape)" srcset="assets/img/hero/stage-1600.webp"><source media="(max-aspect-ratio: 4/5)" srcset="assets/img/hero/poster-portrait-900.webp"><img src="assets/img/hero/poster-1920.webp" srcset="assets/img/hero/poster-1280.webp 1280w, assets/img/hero/poster-1920.webp 1920w" sizes="100vw" width="1920" height="1080" alt="" fetchpriority="high"></picture></div>
+  <div class="hero__fallback" aria-hidden="true"><picture><source media="(max-height: 520px) and (orientation: landscape)" srcset="assets/img/hero/stage-1600.webp"><source media="(max-aspect-ratio: 4/5)" srcset="assets/img/hero/poster-portrait-800.webp"><img src="assets/img/hero/poster-1920.webp" srcset="assets/img/hero/poster-1280.webp 1280w, assets/img/hero/poster-1920.webp 1920w" sizes="100vw" width="1920" height="1080" alt="" fetchpriority="high"></picture></div>
   <div class="hero__vignette" aria-hidden="true"></div>
   <div class="hero__word" aria-hidden="true"><span>ART</span><span>TONIR</span></div>
   <div class="container hero__in">
@@ -687,7 +616,7 @@ ${marquee(['Тонирование любой сложности', 'Антигр
 <section class="section manifesto">
   <div class="container">
     ${eyebrow('ART TONIR · Tuning Studio')}
-    <p class="manifesto__text" data-words>Тонируем стёкла <span class="pill">${img('gallery/02_white-sedan-xiaomi-su7-like_vertical', '', { sizes: '160px' })}</span> бронируем кузов полиуретаном <span class="pill">${img('gallery/08_white-suv-in-studio_wrap-process', '', { sizes: '160px' })}</span> меняем цвет винилом <span class="pill">${img('gallery/22_lada-niva-forest-wrap-roofbox_vertical', '', { sizes: '160px' })}</span> глушим шум и полируем — в боксе со световым потолком в ГСК «Берег». Строго по записи.</p>
+    <p class="manifesto__text" data-words>Тонируем стёкла, бронируем кузов полиуретаном, меняем цвет винилом, глушим шум и полируем — в боксе со световым потолком в ГСК «Берег». Строго по записи.</p>
     <figure class="manifesto__quote" data-reveal>
       <blockquote>«Приняли как и была записана машина. Минута в минуту, день в день.»</blockquote>
       <figcaption>${stars()} Александр Симаков, отзыв из 2ГИС</figcaption>
@@ -713,7 +642,7 @@ ${marquee(['Тонирование любой сложности', 'Антигр
           <ul class="stack__list">${c.items.map((s) => `<li><span>${esc(s.name)}</span><b>${s.priceText}</b></li>`).join('')}</ul>
           <span class="stack__more">Подробнее ${ic('arrow')}</span>
         </div>
-        <div class="stack__media" data-tint>${img(c.hero, c.heroAlt, { sizes: '(max-width: 900px) 92vw, 640px' })}</div>
+        <div class="stack__media" data-img="led">${img(c.hero, c.heroAlt, { sizes: '(max-width: 900px) 92vw, 640px' })}</div>
       </article>`).join('')}
     </div>
   </div>
@@ -732,7 +661,7 @@ ${toolBlock('tint').replace('class="section tool tool--tint"', 'class="section t
     </div>
     <div class="works__track" data-htrack>
       ${works.map((g, i) => `<a class="wcard${g.vertical ? ' wcard--v' : ''}" href="raboty.html#${g.name}" data-cursor="Смотреть">
-        <span class="wcard__img" data-tint>${img(g.src, g.alt, { sizes: g.vertical ? '360px' : '620px' })}</span>
+        <span class="wcard__img" data-img="pill">${img(g.src, g.alt, { sizes: g.vertical ? '360px' : '620px' })}</span>
         <span class="wcard__cap"><i>${String(i + 1).padStart(2, '0')}</i>${esc(g.alt)}</span>
       </a>`).join('')}
       <a class="wcard wcard--more" href="raboty.html">
@@ -760,7 +689,7 @@ ${toolBlock('tint').replace('class="section tool tool--tint"', 'class="section t
         <span class="tags">${R.top_review_tags.map((t) => `<span>${t}</span>`).join('')}</span>
       </a>
       <div class="bento__c bento__c--photo" data-reveal data-tilt>
-        ${img('gallery/21_toyota-rav4-white_studio_vertical', 'Бокс ART TONIR со световым потолком', { sizes: '(max-width: 900px) 92vw, 420px' })}
+        <span class="bento__img" data-img="pill">${img('gallery/21_toyota-rav4-white_studio_vertical', 'Бокс ART TONIR со световым потолком', { sizes: '(max-width: 900px) 92vw, 420px' })}</span>
         <span class="bento__over"><b>Свой бокс</b>ГСК «Берег», бокс 226 — световой потолок, тепло и чисто</span>
       </div>
       <div class="bento__c" data-reveal data-tilt>
@@ -852,7 +781,7 @@ ${ctaBlock()}
     scripts: ['assets/js/tools.js', { module: 'assets/js/hero3d.js' }],
     importmap: true,
     preload: `<link rel="preload" as="image" href="assets/img/hero/poster-1920.webp" imagesrcset="assets/img/hero/poster-1280.webp 1280w, assets/img/hero/poster-1920.webp 1920w" imagesizes="100vw" media="(min-aspect-ratio: 4/5)">
-<link rel="preload" as="image" href="assets/img/hero/poster-portrait-900.webp" media="(max-aspect-ratio: 4/5)">
+<link rel="preload" as="image" href="assets/img/hero/poster-portrait-800.webp" media="(max-aspect-ratio: 4/5)">
 <link rel="modulepreload" href="assets/vendor/three/three.module.min.js">`,
   });
 }
@@ -882,7 +811,7 @@ ${CATS.map((c) => `<section class="section pricecat" id="${c.slug}">
       <a class="link" href="${c.slug}.html">Подробнее о направлении ${ic('arrow', 'ic ic--xs')}</a>
     </div>
     <div class="pgrid">${c.items.map((s) => `<article class="pcard" data-reveal data-tilt>
-      <div class="pcard__img" data-tint>${img(s.imgs[0], `${s.name} — ART TONIR`, { sizes: '(max-width: 640px) 92vw, (max-width: 1100px) 45vw, 400px' })}</div>
+      <div class="pcard__img" data-img="rise">${img(s.imgs[0], `${s.name} — ART TONIR`, { sizes: '(max-width: 640px) 92vw, (max-width: 1100px) 45vw, 400px' })}</div>
       <div class="pcard__body">
         <h3>${esc(s.name)}</h3>
         <p>${esc(s.desc)}</p>
@@ -939,7 +868,7 @@ function buildCategory(c, idx) {
   const faqItems = c.faq.map((i) => FAQ[i]);
   const body = `
 <section class="phero">
-  <div class="phero__media" data-tint="hero">${img(c.hero, c.heroAlt, { sizes: '(max-width: 900px) 100vw, 50vw', eager: true })}</div>
+  <div class="phero__media" data-img="diag">${img(c.hero, c.heroAlt, { sizes: '(max-width: 900px) 100vw, 50vw', eager: true })}</div>
   <div class="container phero__in">
     ${crumbs([['Услуги', 'uslugi.html'], [c.short]])}
     <p class="eyebrow">Направление ${c.num} / 05</p>
@@ -975,7 +904,7 @@ ${toolBlock(c.tool)}
       </div>
       <p class="sec-head__aside" data-reveal><a class="link" href="raboty.html">Вся галерея — ${GALLERY.length} фото ${ic('arrow', 'ic ic--xs')}</a></p>
     </div>
-    <div class="relworks__grid">${c.works.map(gal).map((g) => `<a class="rw${g.vertical ? ' rw--v' : ''}" href="raboty.html#${g.name}" data-reveal data-cursor="Смотреть"><span data-tint>${img(g.src, g.alt, { sizes: '(max-width: 760px) 46vw, 320px' })}</span><i>${esc(g.alt)}</i></a>`).join('')}</div>
+    <div class="relworks__grid">${c.works.map(gal).map((g) => `<a class="rw${g.vertical ? ' rw--v' : ''}" href="raboty.html#${g.name}" data-reveal data-cursor="Смотреть"><span data-img="rise">${img(g.src, g.alt, { sizes: '(max-width: 760px) 46vw, 320px' })}</span><i>${esc(g.alt)}</i></a>`).join('')}</div>
   </div>
 </section>
 
@@ -1010,7 +939,7 @@ function buildWorks() {
     <div class="filters" role="tablist" aria-label="Фильтр фото" data-reveal>${filters.map(([k, t], i) => `<button type="button" role="tab" aria-selected="${i === 0}" data-filter="${k}">${t}<sup>${k === 'all' ? GALLERY.length : GALLERY.filter((g) => g.tag === k).length}</sup></button>`).join('')}</div>
     <div class="masonry" data-gallery>
       ${GALLERY.map((g, i) => `<a class="gitem${g.vertical ? ' gitem--v' : ''}" id="${g.name}" href="${imgUrl(g.src)}" data-tag="${g.tag}" data-lb="${i}" data-cap="${esc(g.alt)}" data-cursor="Смотреть">
-        <span class="gitem__img" data-tint>${img(g.src, g.alt, { sizes: '(max-width: 640px) 92vw, (max-width: 1100px) 45vw, 420px' })}</span>
+        <span class="gitem__img" data-img="focus">${img(g.src, g.alt, { sizes: '(max-width: 640px) 92vw, (max-width: 1100px) 45vw, 420px' })}</span>
         <span class="gitem__cap"><i>${String(i + 1).padStart(2, '0')}</i>${esc(g.alt)}</span>
       </a>`).join('')}
     </div>
@@ -1092,10 +1021,10 @@ function buildStudio() {
       <p class="sec-head__aside" data-reveal>Тёмный бокс, LED-линии на потолке, графитовые стены и ярко-жёлтая кирпичная колонна — узнаете нас по фото.</p>
     </div>
     <div class="sbento">
-      <figure class="sbento__a" data-reveal><span data-tint>${img('gallery/08_white-suv-in-studio_wrap-process', 'Белый внедорожник в боксе ART TONIR в процессе оклейки', { sizes: '(max-width: 900px) 92vw, 760px' })}</span><figcaption>Оклейка в боксе</figcaption></figure>
-      <figure class="sbento__b" data-reveal><span data-tint>${img('gallery/21_toyota-rav4-white_studio_vertical', 'Белая Toyota RAV4 в боксе со световым потолком', { sizes: '(max-width: 900px) 46vw, 380px' })}</span><figcaption>Световой потолок</figcaption></figure>
-      <figure class="sbento__c" data-reveal><span data-tint>${img('gallery/18_white-suv-hood-open_master-at-work_vertical', 'Мастер работает под капотом белого кроссовера', { sizes: '(max-width: 900px) 46vw, 380px' })}</span><figcaption>Мастер за работой</figcaption></figure>
-      <figure class="sbento__d" data-reveal><span data-tint>${img('gallery/12_snowmobile-red-black-wrap_studio_vertical', 'Снегоход в красно-чёрной оклейке в студии', { sizes: '(max-width: 900px) 46vw, 380px' })}</span><figcaption>Не только автомобили</figcaption></figure>
+      <figure class="sbento__a" data-reveal><span data-img="wipe-l">${img('gallery/08_white-suv-in-studio_wrap-process', 'Белый внедорожник в боксе ART TONIR в процессе оклейки', { sizes: '(max-width: 900px) 92vw, 760px' })}</span><figcaption>Оклейка в боксе</figcaption></figure>
+      <figure class="sbento__b" data-reveal><span data-img="led">${img('gallery/21_toyota-rav4-white_studio_vertical', 'Белая Toyota RAV4 в боксе со световым потолком', { sizes: '(max-width: 900px) 46vw, 380px' })}</span><figcaption>Световой потолок</figcaption></figure>
+      <figure class="sbento__c" data-reveal><span data-img="rise">${img('gallery/18_white-suv-hood-open_master-at-work_vertical', 'Мастер работает под капотом белого кроссовера', { sizes: '(max-width: 900px) 46vw, 380px' })}</span><figcaption>Мастер за работой</figcaption></figure>
+      <figure class="sbento__d" data-reveal><span data-img="wipe-r">${img('gallery/12_snowmobile-red-black-wrap_studio_vertical', 'Снегоход в красно-чёрной оклейке в студии', { sizes: '(max-width: 900px) 46vw, 380px' })}</span><figcaption>Не только автомобили</figcaption></figure>
     </div>
   </div>
 </section>
@@ -1122,7 +1051,7 @@ function buildStudio() {
       <p class="lead" data-reveal>Чёрная рамка номера: ART TONIR — белой антиквой, TUNING STUDIO — золотом. Её видно на машинах, которые выезжают из нашего бокса.</p>
     </div>
     <div class="plate__imgs">
-      <figure data-reveal data-tilt>${img('gallery/13_chery-tiggo-grey-front_vertical', 'Серый Chery Tiggo с фирменной рамкой номера ART TONIR TUNING STUDIO', { sizes: '(max-width: 900px) 60vw, 380px' })}</figure>
+      <figure data-reveal data-tilt><span data-img="pill">${img('gallery/13_chery-tiggo-grey-front_vertical', 'Серый Chery Tiggo с фирменной рамкой номера ART TONIR TUNING STUDIO', { sizes: '(max-width: 900px) 60vw, 380px' })}</span></figure>
       <div class="plateframe" data-reveal aria-label="Рамка номера ART TONIR TUNING STUDIO" role="img"><b>ART TONIR</b><i>TUNING STUDIO</i></div>
     </div>
   </div>

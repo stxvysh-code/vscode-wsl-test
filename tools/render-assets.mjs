@@ -40,7 +40,7 @@ async function scene(name, shot, width, height) {
 }
 
 const poster = await scene('poster', 'poster', 1920, 1080);
-const portrait = await scene('poster-portrait', 'poster', 900, 1600);
+const portrait = await scene('poster-portrait', 'poster', 800, 800);
 const stage = await scene('stage', 'stage', 1600, 1200);
 
 const conv = `
@@ -53,7 +53,7 @@ for w in map(int, ws):
     im.resize((w, h), Image.LANCZOS).save(f'{out}-{w}.webp', 'WEBP', quality=82, method=6)
 `;
 execFileSync('python3', ['-c', conv, poster, path.join(OUT, 'poster'), '1920', '1280']);
-execFileSync('python3', ['-c', conv, portrait, path.join(OUT, 'poster-portrait'), '900']);
+execFileSync('python3', ['-c', conv, portrait, path.join(OUT, 'poster-portrait'), '800']);
 execFileSync('python3', ['-c', conv, stage, path.join(OUT, 'stage'), '1600', '900']);
 
 const og = await browser.newPage({ viewport: { width: 1200, height: 630 }, deviceScaleFactor: 1 });

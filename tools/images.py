@@ -12,6 +12,8 @@ OUT = Path(__file__).resolve().parent.parent / "assets" / "img"
 # фото клиентов (09, 11) не публикуем без их согласия
 SKIP = ("09_", "11_")
 BADGE_CROP = 72  # px снизу — там значок «2GIS»
+SERVICE_CROP_TOP = 0.345  # доля высоты сверху с плашкой прайса
+SERVICE_CROP_OVERRIDE = {"14_polish-ceramic": 0.395}
 
 
 MANIFEST = {}
@@ -37,6 +39,8 @@ def main():
         save(im, OUT / "gallery" / f"{stem}-640.webp", 640, 74)
     for f in sorted((SRC / "services").glob("*.jpg")):
         im = ImageOps.exif_transpose(Image.open(f)).convert("RGB")
+        # сверху на фото прайса из 2ГИС вшита плашка «название + цена» — отрезаем верхнюю треть
+        im = im.crop((0, round(im.height * SERVICE_CROP_OVERRIDE.get(f.stem, SERVICE_CROP_TOP)), im.width, im.height))
         save(im, OUT / "services" / f"{f.stem}-800.webp", 800, 80)
         save(im, OUT / "services" / f"{f.stem}-400.webp", 400, 76)
     # логотип

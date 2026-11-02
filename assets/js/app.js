@@ -169,11 +169,36 @@
     });
   }
 
-  /* ---------- проявление фото (плёнка уходит) ---------- */
-  var tintIO = 'IntersectionObserver' in w ? new IntersectionObserver(function (ents) {
-    ents.forEach(function (en) { if (en.isIntersecting) { en.target.classList.add('is-in'); tintIO.unobserve(en.target); } });
-  }, { rootMargin: '0px 0px -12% 0px' }) : null;
-  $$('[data-tint]').forEach(function (el) { tintIO ? tintIO.observe(el) : el.classList.add('is-in'); });
+  /* ---------- появление фото: разные маски (rise, led, wipe-l, wipe-r, pill, diag, focus) ---------- */
+  var IMG_FROM = {
+    rise: 'inset(100% 0% 0% 0%)', led: 'inset(0% 0% 100% 0%)', 'wipe-l': 'inset(0% 100% 0% 0%)', 'wipe-r': 'inset(0% 0% 0% 100%)',
+    pill: 'inset(26% 32% 26% 32% round 999px)', diag: 'polygon(0% 0%, 0% 0%, -30% 100%, -30% 100%)'
+  };
+  var IMG_TO = {
+    rise: 'inset(0% 0% 0% 0%)', led: 'inset(0% 0% 0% 0%)', 'wipe-l': 'inset(0% 0% 0% 0%)', 'wipe-r': 'inset(0% 0% 0% 0%)',
+    pill: 'inset(0% 0% 0% 0% round 0px)', diag: 'polygon(0% 0%, 130% 0%, 100% 100%, -30% 100%)'
+  };
+  function revealImg(el, delay) {
+    if (el.__rev) return;
+    el.__rev = true;
+    if (!ANIM) { el.classList.add('is-revealed'); return; }
+    var type = el.getAttribute('data-img'), im = el.querySelector('img');
+    var done = function () { el.classList.add('is-revealed'); gsap.set(el, { clearProps: 'clipPath,opacity,filter,transform' }); if (im) gsap.set(im, { clearProps: 'transform' }); };
+    var tl = gsap.timeline({ delay: delay || 0, onComplete: done });
+    if (type === 'focus') {
+      tl.fromTo(el, { opacity: 0, y: 46, filter: fine ? 'blur(12px)' : 'blur(0px)' }, { opacity: 1, y: 0, filter: 'blur(0px)', duration: 1.15, ease: 'power3.out' });
+      if (im) tl.fromTo(im, { scale: 1.12 }, { scale: 1, duration: 1.6, ease: 'expo.out' }, 0);
+      return;
+    }
+    var dur = type === 'pill' ? 1.55 : type === 'diag' ? 1.45 : type === 'led' ? 1.35 : 1.25;
+    tl.fromTo(el, { clipPath: IMG_FROM[type] }, { clipPath: IMG_TO[type], duration: dur, ease: type === 'pill' ? 'expo.inOut' : 'power4.inOut' }, 0);
+    if (im) tl.fromTo(im, { scale: 1.22 }, { scale: 1, duration: dur + 0.6, ease: 'expo.out' }, 0);
+    if (type === 'led') {
+      var line = d.createElement('i'); line.className = 'img-led'; line.setAttribute('aria-hidden', 'true'); el.appendChild(line);
+      tl.fromTo(line, { top: '0%', opacity: 1 }, { top: '100%', duration: dur, ease: 'power4.inOut' }, 0)
+        .to(line, { opacity: 0, duration: 0.35, onComplete: function () { line.remove(); } });
+    }
+  }
 
   /* ---------- FAQ: плавное раскрытие ---------- */
   $$('.faq__item').forEach(function (det) {
@@ -229,7 +254,7 @@
         items.forEach(function (it) {
           var show = f === 'all' || it.getAttribute('data-tag') === f;
           it.classList.toggle('is-hidden', !show);
-          if (show) { var t = $('[data-tint]', it); if (t) t.classList.add('is-in'); }
+          if (show) { var t = $('[data-img]', it); if (t) revealImg(t, 0); }
         });
         if (ANIM) { gsap.fromTo(items.filter(function (i) { return !i.classList.contains('is-hidden'); }), { opacity: 0, y: 30 }, { opacity: 1, y: 0, stagger: 0.04, duration: 0.6, ease: 'power3.out', clearProps: 'transform' }); refresh(); }
       });
@@ -310,8 +335,9 @@
       if (use) use.setAttribute('href', on ? '#i-check' : '#i-plus');
     });
     if (!fab) return;
+    $$('[data-smeta-count]').forEach(function (n) { n.textContent = sel.length; });
+    $$('.mbar__smeta').forEach(function (b) { b.hidden = sel.length === 0; });
     fab.hidden = sel.length === 0;
-    $('[data-smeta-count]', fab).textContent = sel.length;
     $('[data-smeta-sum]', fab).textContent = sel.length ? 'от ' + money(sum) : '';
     var list = $('[data-smeta-list]', drawer);
     list.innerHTML = sel.map(function (id) {
@@ -381,11 +407,12 @@
   }
   $$('[data-split]').forEach(splitWords);
   gsap.set('[data-split] .w > *', { y: 0, yPercent: 105 });
-  ST.batch('[data-split]', { start: 'top 90%', once: true, onEnter: function (els) { els.forEach(function (el) { gsap.to($$('.w > *', el), { yPercent: 0, duration: 1.1, ease: 'expo.out', stagger: 0.06, overwrite: true }); }); } });
+  ST.batch('[data-split]', { start: 'top 90%', once: true, onEnter: function (els) { els.forEach(function (el) { el.__shown = true; gsap.to($$('.w > *', el), { yPercent: 0, duration: 1.1, ease: 'expo.out', stagger: 0.06, overwrite: true }); }); } });
 
+  var small = w.matchMedia('(max-width: 760px)').matches;
   ST.batch('[data-reveal]', {
-    start: 'top 92%', once: true,
-    onEnter: function (els) { gsap.to(els, { opacity: 1, y: 0, duration: 1, ease: 'power3.out', stagger: 0.08, overwrite: true, clearProps: 'transform' }); }
+    start: small ? 'top 97%' : 'top 92%', once: true,
+    onEnter: function (els) { els.forEach(function (el) { el.__shown = true; }); gsap.to(els, { opacity: 1, y: 0, duration: small ? 0.6 : 1, ease: 'power3.out', stagger: small ? 0.05 : 0.08, overwrite: true, clearProps: 'transform' }); }
   });
 
   // счётчики
@@ -426,19 +453,21 @@
       el.replaceChild(frag, n);
     });
     el.classList.add('is-split');
-    ST.create({ trigger: el, start: 'top 80%', end: 'bottom 45%', scrub: true, onUpdate: function (self) {
+    ST.create({ trigger: el, start: 'top 85%', end: 'bottom 62%', scrub: true, onUpdate: function (self) {
       var k = Math.round(self.progress * wds.length);
       wds.forEach(function (s, i) { s.classList.toggle('on', i < k); });
     } });
-    $$('.pill', el).forEach(function (p) { gsap.from(p, { width: 0, duration: 1, ease: 'expo.out', scrollTrigger: { trigger: p, start: 'top 75%' } }); });
   });
 
   // стопка карточек услуг
   var cards = $$('.stack__card');
-  cards.forEach(function (c, i) {
-    if (i === cards.length - 1) return;
-    gsap.to(c, { scale: 0.93, '--d': 0.55, ease: 'none', scrollTrigger: { trigger: cards[i + 1], start: 'top bottom', end: 'top 30%', scrub: true } });
-  });
+  ST.matchMedia({ '(min-width: 961px) and (min-height: 720px)': function () {
+    cards.forEach(function (c, i) {
+      if (i === cards.length - 1) return;
+      gsap.to(c, { scale: 0.93, '--d': 0.55, ease: 'none', scrollTrigger: { trigger: cards[i + 1], start: 'top bottom', end: 'top 30%', scrub: true } });
+    });
+    return function () { gsap.set(cards, { clearProps: 'transform,--d' }); };
+  } });
 
   // параллакс
   $$('[data-parallax]').forEach(function (el) {
@@ -474,13 +503,15 @@
     var delay = html.classList.contains('pt-in') ? 0.7 : 0.25;
     var tl = gsap.timeline({ delay: delay });
     tl.from('.hero__eyebrow', { opacity: 0, y: 20, duration: 0.8, ease: 'power3.out' })
-      .from(heroT, { yPercent: 110, duration: 1.2, ease: 'expo.out', stagger: 0.09 }, '-=0.5')
+      .from(heroT, { yPercent: 125, duration: 1.2, ease: 'expo.out', stagger: 0.09 }, '-=0.5')
       .from('.hero__meta > *, .hero__btns > *', { opacity: 0, y: 24, duration: 0.8, ease: 'power3.out', stagger: 0.06 }, '-=0.8')
       .from('.hero__hud', { opacity: 0, x: 30, duration: 1, ease: 'power3.out' }, '-=0.6')
       .from('.stat', { opacity: 0, y: 20, duration: 0.8, stagger: 0.07, ease: 'power3.out' }, '-=0.8')
       .from('.hero__word span', { opacity: 0, yPercent: 20, duration: 2, stagger: 0.15, ease: 'expo.out' }, 0.2);
     gsap.to('.hero__word', { yPercent: 30, ease: 'none', scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true } });
-    gsap.to('.hero__in', { yPercent: -12, opacity: 0.2, ease: 'none', scrollTrigger: { trigger: '.hero', start: 'center center', end: 'bottom top', scrub: true } });
+    ST.matchMedia({ '(min-width: 761px)': function () {
+      gsap.to('.hero__in', { yPercent: -12, opacity: 0.2, ease: 'none', scrollTrigger: { trigger: '.hero', start: 'center center', end: 'bottom top', scrub: true } });
+    } });
   }
 
   // большой футер-вордмарк
@@ -489,7 +520,33 @@
 
   // герои внутренних страниц
   var pm = $('.phero__media img');
-  if (pm) gsap.to(pm, { yPercent: 12, scale: 1.08, ease: 'none', scrollTrigger: { trigger: '.phero', start: 'top top', end: 'bottom top', scrub: true } });
+  if (pm) ST.matchMedia({ '(min-width: 961px)': function () {
+    gsap.to(pm.parentElement, { yPercent: 10, ease: 'none', scrollTrigger: { trigger: '.phero', start: 'top top', end: 'bottom top', scrub: true } });
+  } });
+
+  // фото: появление по скроллу (разные маски) + плавный «наезд» фона в призывах
+  ST.batch('[data-img]', { start: 'top 88%', once: true, onEnter: function (els) { els.forEach(function (el, i) { revealImg(el, i * 0.12 + (el.closest('.phero') ? 0.35 : 0)); }); } });
+  $$('.cta__bg img').forEach(function (im) {
+    gsap.fromTo(im, { scale: 1.25 }, { scale: 1, ease: 'none', scrollTrigger: { trigger: im.closest('.cta'), start: 'top bottom', end: 'center center', scrub: true } });
+  });
+
+  // страховка: если блок уже на экране, но не появился (сбой расчёта позиций) — показать его.
+  // Проверяем только ещё не показанные элементы, в простое браузера; когда показано всё — останавливаемся.
+  var pending = $$('[data-img], [data-reveal], [data-split]');
+  function inView(el) { var r = el.getBoundingClientRect(); return r.height > 0 && r.top < w.innerHeight * 0.96 && r.bottom > 0; }
+  function sweep() {
+    pending = pending.filter(function (el) {
+      var isImg = el.hasAttribute('data-img');
+      if (isImg ? el.__rev : el.__shown) return false;
+      if (!inView(el)) return true;
+      if (isImg) revealImg(el, 0);
+      else if (el.hasAttribute('data-split')) { el.__shown = true; gsap.to($$('.w > *', el), { yPercent: 0, duration: 1, ease: 'expo.out', stagger: 0.05 }); }
+      else { el.__shown = true; gsap.to(el, { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out', clearProps: 'transform' }); }
+      return false;
+    });
+    if (!pending.length) clearInterval(sweepT);
+  }
+  var sweepT = setInterval(function () { (w.requestIdleCallback || setTimeout)(sweep, { timeout: 600 }); }, 1500);
 
   w.addEventListener('load', function () { ST.refresh(); });
   if (d.fonts && d.fonts.ready) d.fonts.ready.then(function () { ST.refresh(); });

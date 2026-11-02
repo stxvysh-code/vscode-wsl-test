@@ -350,6 +350,8 @@ ${canonical}
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(desc)}">
 <meta property="og:image" content="${SITE_URL}/assets/img/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/img/logo/logo-32.png">
 <link rel="apple-touch-icon" href="assets/img/logo/logo-180.png">
@@ -447,51 +449,73 @@ function crumbs(items) {
   return `<nav class="crumbs" aria-label="Хлебные крошки"><a href="index.html">Главная</a>${items.map(([t, h]) => (h ? `<span>/</span><a href="${h}">${t}</a>` : `<span>/</span><span aria-current="page">${t}</span>`)).join('')}</nav>`;
 }
 
-/* SVG-автомобиль для визуализаторов (вид сбоку) */
+/* SVG-автомобиль для визуализаторов (вид сбоку, кроссовер-купе) */
 function carSVG(mode) {
+  const BODY = 'M96 318C82 316 78 300 80 282L84 236C86 214 96 200 118 194C170 170 220 124 292 108C380 92 520 90 590 98C640 104 680 128 712 160C730 176 760 184 800 190L900 206C936 212 952 228 954 252L956 290C956 310 946 318 928 320H858A86 86 0 0 0 686 320H336A86 86 0 0 0 164 320Z';
+  const DLO = 'M200 190C232 160 262 136 306 124C384 106 522 104 584 110C622 114 652 132 680 164L700 190Z';
+  const wheel = (x) => `<g class="car__wheel" transform="translate(${x} 326)">
+      <circle r="66" class="car__tire"/>
+      <circle r="49" fill="url(#g-rim-${mode})"/>
+      <path class="car__caliper" d="M-36 -14A38 38 0 0 1 -14 -36"/>
+      <g class="car__spokes">${[0, 72, 144, 216, 288].map((a) => `<path transform="rotate(${a})" d="M-3 -11L-11 -47H-3L0 -11ZM3 -11L11 -47H3L0 -11Z"/>`).join('')}</g>
+      <circle r="47" class="car__lip"/>
+      <circle r="10" class="car__hub"/>
+    </g>`;
   return `<svg class="car" viewBox="0 0 1000 560" role="img" aria-label="Схема автомобиля сбоку">
   <defs>
     <linearGradient id="g-body-${mode}" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#fff" stop-opacity=".55"/>
-      <stop offset=".38" stop-color="#fff" stop-opacity=".06"/>
-      <stop offset=".42" stop-color="#000" stop-opacity=".0"/>
-      <stop offset="1" stop-color="#000" stop-opacity=".5"/>
+      <stop offset="0" stop-color="#fff" stop-opacity=".5"/>
+      <stop offset=".3" stop-color="#fff" stop-opacity=".08"/>
+      <stop offset=".46" stop-color="#000" stop-opacity="0"/>
+      <stop offset=".72" stop-color="#000" stop-opacity=".18"/>
+      <stop offset="1" stop-color="#000" stop-opacity=".55"/>
     </linearGradient>
-    <linearGradient id="g-sky-${mode}" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#e9eef3"/><stop offset=".55" stop-color="#9aa6b2"/><stop offset="1" stop-color="#5d6772"/>
+    <linearGradient id="g-side-${mode}" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#000" stop-opacity=".35"/><stop offset=".18" stop-color="#000" stop-opacity="0"/>
+      <stop offset=".82" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".3"/>
+    </linearGradient>
+    <linearGradient id="g-sky-${mode}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9aa6b3"/><stop offset=".55" stop-color="#4b535d"/><stop offset="1" stop-color="#262a30"/>
     </linearGradient>
     <linearGradient id="g-cham-${mode}" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0" stop-color="#6b3cff"/><stop offset=".35" stop-color="#18c5b5"/><stop offset=".7" stop-color="#3f7bff"/><stop offset="1" stop-color="#b04cff"/>
       <animateTransform attributeName="gradientTransform" type="translate" values="-0.6 0;0.6 0;-0.6 0" dur="6s" repeatCount="indefinite"/>
     </linearGradient>
     <linearGradient id="g-chrome-${mode}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset=".5" stop-color="#8d949b"/><stop offset="1" stop-color="#e8ebee"/></linearGradient>
-    <radialGradient id="g-rim-${mode}" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#3a3d42"/><stop offset=".75" stop-color="#1b1c1f"/><stop offset="1" stop-color="#0c0c0d"/></radialGradient>
-    <clipPath id="c-glass-${mode}"><path d="M190 186C214 152 244 128 292 121L318 120V188H190Z M334 119H486V188H334Z M502 117H560C592 117 614 124 632 136L698 184V188H502Z"/></clipPath>
+    <radialGradient id="g-rim-${mode}" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#2c2e33"/><stop offset=".8" stop-color="#16171a"/><stop offset="1" stop-color="#0a0a0b"/></radialGradient>
+    <linearGradient id="g-fade-${mode}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".9"/><stop offset=".35" stop-color="#fff" stop-opacity="0"/></linearGradient>
+    <mask id="m-fade-${mode}" maskUnits="userSpaceOnUse" x="0" y="392" width="1000" height="300"><rect x="0" y="392" width="1000" height="300" fill="url(#g-fade-${mode})"/></mask>
+    <clipPath id="c-glass-${mode}"><path d="${DLO}"/></clipPath>
+    <clipPath id="c-body-${mode}"><path d="${BODY}"/></clipPath>
   </defs>
-  <linearGradient id="g-fade-${mode}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".9"/><stop offset=".35" stop-color="#fff" stop-opacity="0"/></linearGradient>
-  <mask id="m-fade-${mode}" maskUnits="userSpaceOnUse" x="0" y="392" width="1000" height="300"><rect x="0" y="392" width="1000" height="300" fill="url(#g-fade-${mode})"/></mask>
   <use href="#car-main-${mode}" class="car__refl-g" transform="translate(0 784) scale(1 -1)" mask="url(#m-fade-${mode})"/>
-  <ellipse class="car__shadow" cx="520" cy="392" rx="440" ry="16"/>
+  <ellipse class="car__shadow" cx="518" cy="392" rx="460" ry="14"/>
   <g id="car-main-${mode}">
-  <path class="car__body" d="M122 320C104 318 98 302 98 286L100 238C101 216 108 202 124 194L162 172C204 132 240 112 302 104L560 100C600 99 628 106 654 122L744 182C802 188 870 196 908 210C932 220 944 236 946 256L948 290C948 308 938 318 920 320H844A78 78 0 0 0 690 320H336A78 78 0 0 0 182 320Z"/>
-  <path class="car__shade" fill="url(#g-body-${mode})" d="M122 320C104 318 98 302 98 286L100 238C101 216 108 202 124 194L162 172C204 132 240 112 302 104L560 100C600 99 628 106 654 122L744 182C802 188 870 196 908 210C932 220 944 236 946 256L948 290C948 308 938 318 920 320H844A78 78 0 0 0 690 320H336A78 78 0 0 0 182 320Z"/>
-  <path class="car__gloss" d="M170 214C400 204 700 204 920 224" />
-  <path class="car__sill" d="M340 306H688"/>
-  <g class="car__glass" clip-path="url(#c-glass-${mode})">
-    <rect x="180" y="110" width="530" height="90" fill="url(#g-sky-${mode})"/>
-    <g class="car__inside"><rect x="236" y="138" width="34" height="40" rx="12"/><rect x="398" y="134" width="40" height="46" rx="14"/><rect x="556" y="136" width="40" height="44" rx="14"/><path d="M620 170h70v14h-70z"/></g>
-    <path class="car__refl" d="M260 110 L330 110 L250 200 L180 200Z M520 110 L560 110 L480 200 L440 200Z"/>
-    <path class="tint tint--rear" d="M180 110H494V200H180Z"/>
-    <path class="tint tint--front" d="M494 110H710V200H494Z"/>
-  </g>
-  <path class="car__pillars" d="M318 118H334V190H318Z M486 116H502V190H486Z"/>
-  <path class="car__chrome" d="M188 190H700"/>
-  <path class="car__lines" d="M494 192V300 M334 192C334 230 330 270 318 300 M700 196V280C702 296 696 304 688 306 M470 214h22 M664 214h22"/>
-  <path class="car__mirror" d="M690 176C700 168 722 168 730 176L734 192H700Z"/>
-  <path class="car__tail" d="M100 218C100 208 106 202 116 200L132 196V226L102 230Z"/>
-  <path class="car__head" d="M892 214C912 216 930 224 938 236L940 244H902C896 236 892 226 892 214Z"/>
-  <path class="car__grille" d="M940 262H948V282H942Z"/>
-  ${[258, 766].map((x) => `<g class="car__wheel" transform="translate(${x} 330)"><circle r="62" class="car__tire"/><circle r="44" fill="url(#g-rim-${mode})"/><g class="car__spokes">${[0, 72, 144, 216, 288].map((a) => `<path transform="rotate(${a})" d="M-5 -10 L-9 -40 L9 -40 L5 -10Z"/>`).join('')}</g><circle r="9" class="car__hub"/></g>`).join('')}
+    <path class="car__body" d="${BODY}"/>
+    <g clip-path="url(#c-body-${mode})">
+      <rect x="70" y="80" width="900" height="260" fill="url(#g-body-${mode})" class="car__shade"/>
+      <rect x="70" y="80" width="900" height="260" fill="url(#g-side-${mode})"/>
+      <path class="car__band" d="M80 236C300 224 700 224 960 246V262C700 242 300 242 80 254Z"/>
+      <path class="car__clad" d="M60 300H990V330H60Z"/>
+    </g>
+    <path class="car__gloss" d="M112 224C300 212 700 212 944 236"/>
+    <path class="car__arch" d="M164 320A86 86 0 0 1 336 320M686 320A86 86 0 0 1 858 320"/>
+    <g class="car__glass" clip-path="url(#c-glass-${mode})">
+      <rect x="190" y="96" width="520" height="100" fill="url(#g-sky-${mode})"/>
+      <g class="car__inside"><rect x="404" y="140" width="34" height="46" rx="14"/><rect x="588" y="138" width="34" height="48" rx="14"/><path d="M640 186C640 164 656 152 672 160" fill="none" stroke="#202226" stroke-width="7" stroke-linecap="round"/></g>
+      <path class="car__led" d="M222 182L300 126M352 112L336 190M408 110L460 190M470 110L520 150M560 108L612 176M640 132L606 190"/>
+      <path class="tint tint--rear" d="M190 96H508V196H190Z"/>
+      <path class="tint tint--front" d="M508 96H710V196H508Z"/>
+    </g>
+    <path class="car__pillars" d="M290 126L310 122L326 190H304ZM500 104H516V190H500Z"/>
+    <path class="car__chrome" stroke="url(#g-chrome-${mode})" d="${DLO}"/>
+    <path class="car__lines" d="M516 194V302M318 194C322 240 326 276 330 298M704 196C712 230 712 270 700 300"/>
+    <path class="car__handle" d="M452 216h30M650 216h30"/>
+    <path class="car__mirror" d="M688 172C700 164 726 164 736 172L740 192H702Z"/>
+    <path class="car__tail" d="M82 222C82 214 88 210 98 208L126 202V213L86 230Z"/>
+    <path class="car__head" d="M896 214C918 216 940 222 950 234L952 240H908C902 232 898 224 896 214Z"/>
+    <path class="car__grille" d="M934 266H955V296H940Z"/>
+    ${wheel(250)}${wheel(772)}
   </g>
 </svg>`;
 }
@@ -519,7 +543,6 @@ function toolBlock(kind) {
       <p class="tool__note">Визуализация условная: реальный оттенок зависит от плёнки и автомобиля.</p>
     </div>
     <div class="tool__stage tool__stage--car" data-reveal>
-      <div class="hexbg" aria-hidden="true"></div>
       ${carSVG('tint')}
     </div>
   </div>
@@ -548,7 +571,6 @@ function toolBlock(kind) {
       <p class="tool__note">Цвета на экране условные. Палитру плёнок в наличии уточняйте у мастера.</p>
     </div>
     <div class="tool__stage tool__stage--car" data-reveal>
-      <div class="hexbg" aria-hidden="true"></div>
       ${carSVG('color')}
     </div>
   </div>
@@ -633,7 +655,7 @@ function buildIndex() {
   const body = `
 <section class="hero" data-hero>
   <canvas class="hero__gl" aria-hidden="true"></canvas>
-  <div class="hero__fallback" aria-hidden="true">${img('gallery/21_toyota-rav4-white_studio_vertical', '', { sizes: '100vw', eager: true })}</div>
+  <div class="hero__fallback" aria-hidden="true"><picture><source media="(max-aspect-ratio: 4/5)" srcset="assets/img/hero/poster-portrait-900.webp"><img src="assets/img/hero/poster-1920.webp" srcset="assets/img/hero/poster-1280.webp 1280w, assets/img/hero/poster-1920.webp 1920w" sizes="100vw" width="1920" height="1080" alt="" fetchpriority="high"></picture></div>
   <div class="hero__vignette" aria-hidden="true"></div>
   <div class="hero__word" aria-hidden="true"><span>ART</span><span>TONIR</span></div>
   <div class="container hero__in">
@@ -829,7 +851,9 @@ ${ctaBlock()}
     bodyClass: 'is-home',
     scripts: ['assets/js/tools.js', 'assets/js/hero3d.mjs'],
     importmap: true,
-    preload: `<link rel="modulepreload" href="assets/vendor/three/three.module.min.js">`,
+    preload: `<link rel="preload" as="image" href="assets/img/hero/poster-1920.webp" imagesrcset="assets/img/hero/poster-1280.webp 1280w, assets/img/hero/poster-1920.webp 1920w" imagesizes="100vw" media="(min-aspect-ratio: 4/5)">
+<link rel="preload" as="image" href="assets/img/hero/poster-portrait-900.webp" media="(max-aspect-ratio: 4/5)">
+<link rel="modulepreload" href="assets/vendor/three/three.module.min.js">`,
   });
 }
 

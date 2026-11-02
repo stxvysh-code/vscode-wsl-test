@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>OG-шаблон ART TONIR</title>
+<!-- Шаблон картинки для превью ссылок (1200×630). Рендерится tools/render-assets.mjs в assets/img/og.jpg -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700&family=Manrope:wght@600;700&family=Playfair+Display:ital,wght@0,700;1,600&family=JetBrains+Mono:wght@500&family=Rye&display=swap">
+<style>
+  html, body { margin: 0; width: 1200px; height: 630px; overflow: hidden; background: #0b0b0b; color: #f5f3ef; font-family: Manrope, sans-serif; }
+  .og { position: relative; width: 1200px; height: 630px; overflow: hidden; }
+  .bg { position: absolute; inset: 0; background: url(../assets/img/hero/poster-1920.webp) 70% 40% / cover; }
+  .bg::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(8,8,9,.96) 0%, rgba(8,8,9,.82) 46%, rgba(8,8,9,.15) 80%), linear-gradient(to top, rgba(8,8,9,.9), transparent 40%); }
+  .in { position: absolute; inset: 0; padding: 54px 64px; display: flex; flex-direction: column; }
+  .brand { display: flex; align-items: center; gap: 18px; }
+  .badge { width: 74px; height: 74px; border-radius: 50%; padding: 4px; background: conic-gradient(from 200deg, #9c7f45, #e6cf98, #c5a465, #9c7f45, #e6cf98, #9c7f45); }
+  .badge img { width: 100%; height: 100%; border-radius: 50%; display: block; }
+  .brand b { display: block; font: 700 40px/1 "Playfair Display", serif; letter-spacing: .04em; }
+  .brand i { display: block; font: 400 16px/1 Rye, serif; font-style: normal; color: #c5a465; letter-spacing: .18em; margin-top: 8px; }
+  h1 { margin: auto 0 0; font: 700 58px/1 Unbounded, sans-serif; text-transform: uppercase; letter-spacing: -.02em; }
+  h1 em { display: block; font: italic 600 62px/1.1 "Playfair Display", serif; text-transform: none; letter-spacing: 0; background: linear-gradient(100deg, #9c7f45, #e6cf98 35%, #c5a465 60%, #e6cf98); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  h1 small { display: block; font-size: 26px; color: #a3a09a; margin-top: 14px; letter-spacing: .02em; }
+  .row { display: flex; gap: 14px; margin-top: 30px; align-items: center; }
+  .chip { padding: 12px 20px; border-radius: 999px; border: 1px solid rgba(255,255,255,.18); background: rgba(12,12,13,.6); font: 600 20px Manrope, sans-serif; color: #a3a09a; }
+  .chip b { color: #f5f3ef; }
+  .chip .s { color: #c5a465; }
+  .chip--gold { background: linear-gradient(135deg, #f0dcaa, #c5a465 45%, #a9894c); color: #0d0c0a; border: 0; font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="og">
+  <div class="bg"></div>
+  <div class="in">
+    <div class="brand"><span class="badge"><img src="../assets/img/logo/logo.svg" alt=""></span><span><b>ART TONIR</b><i>TUNING STUDIO</i></span></div>
+    <h1>Тонировка,<em>антигравийная плёнка</em>и шумоизоляция<small>Бийск · Советская, 217/7 · по записи</small></h1>
+    <div class="row">
+      <span class="chip"><span class="s">★</span> <b>5.0</b> в 2ГИС · 123 оценки · 92 отзыва</span>
+      <span class="chip chip--gold">+7 913 240-36-66</span>
+    </div>
+  </div>
+</div>
+</body>
+</html>

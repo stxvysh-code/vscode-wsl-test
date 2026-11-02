@@ -35,7 +35,9 @@ function canvasTex(w, h, draw, repeat) {
 }
 
 function init() {
-  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // ?shot=empty|stage — служебный режим для рендера статичных картинок (tools/render-assets.mjs)
+  const SHOT = new URLSearchParams(location.search).get('shot');
+  const reduce = !!SHOT || matchMedia('(prefers-reduced-motion: reduce)').matches;
   let mobile = innerWidth < 760;
   const coarse = matchMedia('(pointer: coarse)').matches;
 
@@ -51,8 +53,8 @@ function init() {
   scene.fog = new THREE.FogExp2(BG, 0.052);
 
   const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 90);
-  const camBase = new THREE.Vector3(0, 1.55, 6.6);
-  const lookBase = new THREE.Vector3(0.4, 1.95, -4);
+  const camBase = SHOT === 'stage' ? new THREE.Vector3(0, 1.05, 7.2) : new THREE.Vector3(0, 1.55, 6.6);
+  const lookBase = SHOT === 'stage' ? new THREE.Vector3(0, 1.55, -6) : new THREE.Vector3(0.4, 1.95, -4);
 
   /* ---------- комната ---------- */
   const W = 11, H = 4.3, Z0 = 8, Z1 = -34;
@@ -315,7 +317,7 @@ function init() {
     camera.fov = w / h < 0.8 ? 58 : 42;
     camera.updateProjectionMatrix();
     reflector.getRenderTarget().setSize(Math.round(w * DPR * 0.5), Math.round(h * DPR * 0.5));
-    glassGroup.visible = w / h >= 0.8;
+    glassGroup.visible = w / h >= 0.8 && SHOT !== 'empty' && SHOT !== 'stage';
     if (w / h < 0.8) { // портрет / телефон: только световой потолок
       glassGroup.position.set(0.55, 2.95, -1.4);
       glassGroup.scale.setScalar(0.56);

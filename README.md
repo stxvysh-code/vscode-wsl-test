@@ -39,7 +39,9 @@ python3 -m http.server 8000
 1. Правьте `data/site.json` (цены, услуги, отзывы, контакты) или тексты в `tools/build.mjs`.
 2. Пересоберите страницы: `node tools/build.mjs` (нужен Node 18+).
 3. Новые фото: `python3 tools/images.py <папка ArtTonir_site_kit>` — обрежет значок 2GIS, сожмёт в WebP и обновит `assets/img/manifest.json`.
-4. Когда появится домен — впишите его в `SITE_URL` в `tools/build.mjs` и пересоберите (canonical, og:url, sitemap.xml).
+4. Фирменные картинки (постер 3D-сцены, фон «бокса» для визуализаторов, превью ссылок `og.jpg`) рендерятся из самого сайта:
+   `python3 -m http.server 8765 &` и `node tools/render-assets.mjs` — после любых правок 3D-сцены или шаблона `tools/og.html`.
+5. Когда появится домен — впишите его в `SITE_URL` в `tools/build.mjs` и пересоберите (canonical, og:url, sitemap.xml).
 
 ## Технологии
 

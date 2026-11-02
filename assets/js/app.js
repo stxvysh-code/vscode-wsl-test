@@ -391,9 +391,10 @@
   // счётчики
   $$('[data-count]').forEach(function (el) {
     var raw = el.getAttribute('data-count'), dec = (raw.split('.')[1] || '').length, target = parseFloat(raw), o = { v: 0 };
-    el.textContent = (0).toFixed(dec);
-    ST.create({ trigger: el, start: 'top 95%', once: true, onEnter: function () {
-      gsap.to(o, { v: target, duration: 1.8, ease: 'power3.out', onUpdate: function () { el.textContent = o.v.toFixed(dec); } });
+    // реальное значение видно до анимации — счётчик никогда не «застрянет» на нуле
+    ST.create({ trigger: el, start: 'top bottom', once: true, onEnter: function () {
+      o.v = 0; el.textContent = (0).toFixed(dec);
+      gsap.to(o, { v: target, duration: 1.8, ease: 'power3.out', onUpdate: function () { el.textContent = o.v.toFixed(dec); }, onComplete: function () { el.textContent = raw; } });
     } });
   });
   $$('.score').forEach(function (s) { ST.create({ trigger: s, start: 'top 85%', once: true, onEnter: function () { s.classList.add('is-in'); } }); });

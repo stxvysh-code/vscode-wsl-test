@@ -205,7 +205,7 @@ def pitch(name, group, label, t, soc, city):
     else:
         hook = "на картах у вас указан только телефон, сайта нет"
     return (f"Здравствуйте! Это «{name}»? (дождись ответа) Меня зовут [ИМЯ], я делаю сайты для {whom}. "
-            f"Нашёл вас на карте {CITY_PREP.get(city, city)} — {hook}. {pain} "
+            f"Нашёл вас на карте в {CITY_PREP.get(city, city)} — {hook}. {pain} "
             f"Могу за 3–5 дней сделать вам {offer} — от 5 000 ₽. "
             f"И могу бесплатно показать черновой вариант именно для «{name}». Удобно, если пришлю в WhatsApp?")
 
@@ -218,11 +218,13 @@ def main():
             raw.setdefault((e["type"], e["id"]), (city, e))
     print("raw elements:", len(raw))
 
-    names = collections.Counter()
+    nk = lambda x: x.strip().lower().replace("ё", "е")
+    names, name_cities = collections.Counter(), collections.defaultdict(set)
     for city, e in raw.values():
-        n = (e.get("tags", {}).get("name") or "").strip().lower()
+        n = nk(e.get("tags", {}).get("name") or "")
         if n:
             names[n] += 1
+            name_cities[n].add(city)
 
     leads, seen_phone = [], {}
     drop = collections.Counter()
@@ -243,8 +245,11 @@ def main():
         group, label = cls
         if STATE_RE.search(name) or STATE_RE.search(t.get("operator", "")) or STATE_RE.search(t.get("official_name", "")):
             drop["state/large"] += 1; continue
-        if names[name.lower()] >= 5 and name.lower() not in GENERIC:
-            drop["probable chain (name x5+)"] += 1; continue
+        n = nk(name)
+        if n not in GENERIC and (names[n] >= 5 or (names[n] >= 4 and len(name_cities[n]) >= 2)):
+            drop["probable chain (repeated name)"] += 1; continue
+        if any("franch" in str(v).lower() or "франш" in str(v).lower() for v in t.values()):
+            drop["franchise"] += 1; continue
         phones = []
         for k in ("phone", "contact:phone", "contact:mobile", "mobile", "phone:mobile"):
             for p in norm_phone(t.get(k)):
